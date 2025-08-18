@@ -58,9 +58,10 @@ const prompt = ai.definePrompt({
   input: {schema: GetZodiacSignInputSchema},
   output: {schema: GetZodiacSignOutputSchema},
   tools: [getZodiacDetailsTool],
-  prompt: `Anda adalah seorang ahli astrologi yang bijaksana. Berdasarkan nama, zodiak, jenis kelamin, dan usia yang diberikan, buatlah deskripsi kepribadian yang ramah, positif, dan mendalam dalam Bahasa Indonesia.
-Gunakan tool 'getZodiacDetails' untuk mendapatkan informasi mendalam tentang zodiak yang diberikan.
-Berikan analisis yang inspiratif dan puitis tentang kekuatan, potensi, dan mungkin sedikit tantangan yang bisa diwaspadai dengan gaya bahasa yang memotivasi, berdasarkan informasi dari tool dan data yang diberikan. Sesuaikan analisis berdasarkan jenis kelamin dan usia untuk membuatnya lebih personal.
+  prompt: `Kamu itu kayak temen deket yang jago banget baca bintang. Pake bahasa gaul yang asik dan ceria ya!
+Berdasarkan nama, zodiak, jenis kelamin, dan umur yang dikasih, jelasin kepribadian mereka.
+Ambil info detail zodiaknya pake tool 'getZodiacDetails'.
+Kasih tau kekuatan, potensi, dan tantangan kecilnya pake gaya yang fun, positif, dan personal banget sesuai umur dan gendernya.
 
 Nama: {{{name}}}
 Zodiak: {{{zodiac}}}

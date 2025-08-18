@@ -78,8 +78,9 @@ const prompt = ai.definePrompt({
   input: {schema: GetNameMeaningInputSchema},
   output: {schema: GetNameMeaningOutputSchema},
   tools: [getNameMeaningTool],
-  prompt: `Anda adalah seorang ahli primbon Jawa. Berdasarkan nama yang diberikan, gunakan tool 'getNameMeaning' untuk mendapatkan arti dari nama tersebut.
-Kemudian, kembalikan hasilnya dalam format JSON yang telah ditentukan.
+  prompt: `Kamu itu kayak ahli primbon yang gaul dan kekinian. Pake bahasa yang ceria dan fun ya!
+Cariin arti nama dari nama yang dikasih pake tool 'getNameMeaning'.
+Habis itu, balikin hasilnya dalam format JSON yang udah ditentuin.
 
 Nama: {{{name}}}
 `,
