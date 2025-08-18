@@ -17,14 +17,14 @@ export async function POST(request: Request) {
         nama: nikData.data.nama || '',
         ttl: `${nikData.data.tempat_lahir || ''}`,
         jenis_kelamin: nikData.data.kelamin || '',
-        golongan_darah: nikData.data.gol_darah || '-', // Defaulting as not present in sample
+        golongan_darah: nikData.data.gol_darah || '-',
         alamat: nikData.data.alamat || '',
-        'rt/rw': nikData.data.rt_rw || '-', // Defaulting as not present in sample
+        'rt/rw': nikData.data.rt_rw || '-',
         'kel/desa': nikData.data.kelurahan || '',
         kecamatan: nikData.data.kecamatan || '',
-        agama: nikData.data.agama || '-', // Defaulting as not present in sample
-        status: nikData.data.status_perkawinan || '-', // Defaulting as not present in sample
-        pekerjaan: nikData.data.pekerjaan || '-', // Defaulting as not present in sample
+        agama: nikData.data.agama || '-',
+        status: nikData.data.status_perkawinan || '-',
+        pekerjaan: nikData.data.pekerjaan || '-',
         kewarganegaraan: 'WNI',
         masa_berlaku: 'SEUMUR HIDUP',
         terbuat: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'),
@@ -37,6 +37,8 @@ export async function POST(request: Request) {
     const ektpResponse = await fetch(ektpApiUrl);
 
     if (!ektpResponse.ok) {
+        const errorText = await ektpResponse.text();
+        console.error("e-KTP API error:", errorText);
         throw new Error('Failed to generate e-KTP image from external API.');
     }
     
