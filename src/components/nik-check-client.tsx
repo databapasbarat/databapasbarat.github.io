@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getZodiacSign } from "@/ai/flows/zodiac-flow";
 
 const formSchema = z.object({
   nik: z
@@ -41,23 +42,32 @@ const formSchema = z.object({
 });
 
 interface NikData {
-  nik: string;
-  data: {
-      nama_lengkap: string;
-      tanggal_lahir: string;
-      [key: string]: any;
-  };
-  metadata: {
-    lat?: string;
-    lon?: string;
-    [key: string]: any;
-  };
-  data_lhp: Record<string, any>[];
+    nik: string;
+    data: {
+        nama: string;
+        zodiak: string;
+        shio?: string;
+        koordinat?: {
+            lat: string;
+            lon: string;
+        };
+        [key: string]: any;
+    };
+    metadata: {
+        [key: string]: any;
+    };
+    data_lhp: Record<string, any>[];
 }
 
 interface ApiResponse {
   status: boolean;
-  data: NikData;
+  data: {
+    nik: string;
+    status: string;
+    data: NikData["data"];
+    metadata: NikData["metadata"];
+    data_lhp: NikData["data_lhp"];
+  };
   message?: string;
 }
 
@@ -94,7 +104,7 @@ export function NikCheckClient() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              name: nikData.data.nama_lengkap,
+              name: nikData.data.nama,
               zodiac: zodiacData.zodiac,
               shio: zodiacData.shio,
             }),
@@ -116,28 +126,23 @@ export function NikCheckClient() {
   }, [zodiacData, nikData]);
 
 
-  const fetchZodiacData = async (name: string, birthdate: string) => {
+  const fetchZodiacData = async (name: string, zodiac: string, shio: string | undefined) => {
       setIsCheckingZodiac(true);
       setZodiacError(null);
       try {
-          if (!birthdate) {
-            throw new Error("Tanggal lahir tidak tersedia dari data NIK.");
+          if (!zodiac) {
+            setZodiacError("Zodiak tidak tersedia dari data NIK.");
+            setIsCheckingZodiac(false);
+            return;
           }
-          const [day, month, year] = birthdate.split('-');
-          const formattedBirthdate = `${year}-${month}-${day}`;
 
-          const response = await fetch('/api/zodiac', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ name: name, birthdate: formattedBirthdate }),
+          const personalityResult = await getZodiacSign({ name: name, zodiac, shio: shio || 'Tidak diketahui' });
+          setZodiacData({
+              zodiac,
+              shio: shio || "Tidak Diketahui",
+              personality: personalityResult.personality,
           });
-          const result = await response.json();
-          if (!response.ok) {
-              throw new Error(result.error || "Gagal mendapatkan data zodiak.");
-          }
-          setZodiacData(result);
+
       } catch (e: any) {
           console.error("Zodiac check failed:", e);
           setZodiacError(e.message || "Gagal memuat data zodiak.");
@@ -161,17 +166,24 @@ export function NikCheckClient() {
       const response = await fetch(`/api/check-nik?nik=${values.nik}`);
       const result: ApiResponse & { error?: string } = await response.json();
 
-      if (!response.ok || result.status === false) {
+      if (!response.ok || result.status === false || result.data.status !== 'success') {
         throw new Error(result.message || result.error || "Data tidak ditemukan!");
       }
 
-      setNikData(result.data);
+      const extractedData: NikData = {
+          nik: result.data.nik,
+          data: result.data.data,
+          metadata: result.data.metadata,
+          data_lhp: result.data.data_lhp,
+      };
+
+      setNikData(extractedData);
       
-      if (result.data.data.tanggal_lahir) {
-        fetchZodiacData(result.data.data.nama_lengkap, result.data.data.tanggal_lahir);
+      if (extractedData.data.zodiak) {
+        fetchZodiacData(extractedData.data.nama, extractedData.data.zodiak, extractedData.data.shio);
       } else {
         setIsCheckingZodiac(false);
-        setZodiacError("Tanggal lahir tidak tersedia dari data NIK untuk mendapatkan zodiak.");
+        setZodiacError("Zodiak tidak tersedia dari data NIK.");
       }
 
     } catch (err: any) {
@@ -181,18 +193,23 @@ export function NikCheckClient() {
     }
   }
 
-  const renderTable = (data: Record<string, any>) => (
-    <Table>
-      <TableBody>
-        {Object.entries(data).map(([key, value]) => (
-          <TableRow key={key}>
-            <TableCell className="font-medium capitalize w-1/3">{key.replace(/_/g, ' ')}</TableCell>
-            <TableCell>{String(value)}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+  const renderTable = (data: Record<string, any>) => {
+    // Exclude nested objects from being rendered directly in the table
+    const filteredData = Object.entries(data).filter(([_, value]) => typeof value !== 'object' || value === null);
+
+    return (
+        <Table>
+            <TableBody>
+                {filteredData.map(([key, value]) => (
+                    <TableRow key={key}>
+                        <TableCell className="font-medium capitalize w-1/3">{key.replace(/_/g, ' ')}</TableCell>
+                        <TableCell>{String(value)}</TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -290,7 +307,9 @@ export function NikCheckClient() {
                         ) : generatedImage ? (
                             <Image src={generatedImage} alt="Generated Persona" width={512} height={512} className="w-full rounded-md" data-ai-hint="futuristic modern" />
                         ) : (
-                            <p className="text-sm text-muted-foreground">Gagal membuat gambar atau sedang menunggu data lain.</p>
+                             <div className="w-full aspect-square rounded-md bg-muted flex items-center justify-center">
+                                <p className="text-sm text-muted-foreground text-center p-4">Gambar akan dibuat setelah data NIK dan Zodiak berhasil dimuat.</p>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
@@ -313,7 +332,7 @@ export function NikCheckClient() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold">Zodiak</h3>
-                                    <p className="text-muted-foreground">{zodiacData.zodiac}</p>
+                                    <p className="text-muted-foreground">{zodiacData.zodiak}</p>
                                 </div>
                                 <div>
                                     <h3 className="font-semibold">Shio</h3>
@@ -326,7 +345,7 @@ export function NikCheckClient() {
                                 </div>
                             </div>
                         ) : (
-                             <p className="text-sm text-muted-foreground">{zodiacError || "Gagal memuat data zodiak."}</p>
+                             <p className="text-sm text-muted-foreground">{zodiacError || "Data zodiak tidak tersedia."}</p>
                         )}
                     </CardContent>
                 </Card>
@@ -342,7 +361,7 @@ export function NikCheckClient() {
                 </CardContent>
               </Card>
 
-              {nikData.metadata?.lat && nikData.metadata?.lon && (
+              {nikData.data.koordinat?.lat && nikData.data.koordinat?.lon && (
                 <Card>
                   <CardHeader className="flex flex-row items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" />
@@ -356,7 +375,7 @@ export function NikCheckClient() {
                         style={{ border: 0, borderRadius: 'var(--radius)' }}
                         loading="lazy"
                         allowFullScreen
-                        src={`https://maps.google.com/maps?q=${nikData.metadata.lat},${nikData.metadata.lon}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                        src={`https://maps.google.com/maps?q=${nikData.data.koordinat.lat},${nikData.data.koordinat.lon}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                       ></iframe>
                     </div>
                   </CardContent>

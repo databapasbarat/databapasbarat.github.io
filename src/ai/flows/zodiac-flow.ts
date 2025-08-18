@@ -46,6 +46,7 @@ const getZodiacDetailsTool = ai.defineTool(
     if(data.status === false){
       return `No details found for zodiac ${input.zodiac}`;
     }
+    // Return only the data part which contains the description
     return JSON.stringify(data.data);
   }
 );
