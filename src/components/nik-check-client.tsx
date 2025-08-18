@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck, Cake } from "lucide-react";
+import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck, Cake, BookText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getZodiacSign } from "@/ai/flows/zodiac-flow";
+import { getNameMeaning } from "@/ai/flows/name-meaning-flow";
 import { BirthdayCountdown } from "@/components/birthday-countdown";
 
 const formSchema = z.object({
@@ -72,18 +73,26 @@ interface ZodiacData {
   personality: string;
 }
 
+interface NameMeaningData {
+    nama: string;
+    arti: string;
+    catatan?: string;
+}
 
 export function NikCheckClient() {
   const [nikData, setNikData] = useState<NikData | null>(null);
   const [zodiacData, setZodiacData] = useState<ZodiacData | null>(null);
+  const [nameMeaningData, setNameMeaningData] = useState<NameMeaningData | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [ektpImage, setEktpImage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
+  const [isCheckingNameMeaning, setIsCheckingNameMeaning] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingEktp, setIsGeneratingEktp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [zodiacError, setZodiacError] = useState<string | null>(null);
+  const [nameMeaningError, setNameMeaningError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -152,6 +161,21 @@ export function NikCheckClient() {
     }
   }, [zodiacData, nikData]);
 
+  const fetchNameMeaningData = async (name: string) => {
+    setIsCheckingNameMeaning(true);
+    setNameMeaningError(null);
+    try {
+        const result = await getNameMeaning({ name });
+        setNameMeaningData(result);
+    } catch (e: any) {
+        console.error("Name meaning check failed:", e);
+        setNameMeaningError(e.message || "Gagal memuat data arti nama.");
+        setNameMeaningData(null);
+    } finally {
+        setIsCheckingNameMeaning(false);
+    }
+  };
+
 
   const fetchZodiacData = async (name: string, zodiac: string) => {
       setIsCheckingZodiac(true);
@@ -182,12 +206,15 @@ export function NikCheckClient() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsChecking(true);
     setIsCheckingZodiac(false);
+    setIsCheckingNameMeaning(false);
     setIsGeneratingImage(false);
     setIsGeneratingEktp(false);
     setError(null);
     setZodiacError(null);
+    setNameMeaningError(null);
     setNikData(null);
     setZodiacData(null);
+    setNameMeaningData(null);
     setGeneratedImage(null);
     setEktpImage(null);
 
@@ -205,6 +232,10 @@ export function NikCheckClient() {
       };
 
       setNikData(extractedData);
+      
+      if (extractedData.data.nama) {
+        fetchNameMeaningData(extractedData.data.nama);
+      }
       
       if (extractedData.data.zodiak) {
         fetchZodiacData(extractedData.data.nama, extractedData.data.zodiak);
@@ -398,6 +429,43 @@ export function NikCheckClient() {
                         )}
                     </CardContent>
                 </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center gap-2">
+                        <BookText className="h-5 w-5 text-primary"/>
+                        <CardTitle className="font-headline">Arti Nama</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isCheckingNameMeaning ? (
+                            <div className="space-y-4">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-4 w-full mt-4" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
+                            </div>
+                        ) : nameMeaningData ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="font-semibold">Nama</h3>
+                                    <p className="text-muted-foreground">{nameMeaningData.nama}</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold">Arti</h3>
+                                    <p className="text-muted-foreground">{nameMeaningData.arti}</p>
+                                </div>
+                                {nameMeaningData.catatan && (
+                                    <div>
+                                        <h3 className="font-semibold">Catatan</h3>
+                                        <p className="text-muted-foreground">{nameMeaningData.catatan}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                             <p className="text-sm text-muted-foreground">{nameMeaningError || "Data arti nama tidak tersedia."}</p>
+                        )}
+                    </CardContent>
+                </Card>
+
                  {nikData.data.tempat_lahir && (
                   <Card>
                     <CardHeader className="flex flex-row items-center gap-2">
