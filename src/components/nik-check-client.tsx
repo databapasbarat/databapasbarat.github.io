@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, Camera, MapPin } from "lucide-react";
+import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -80,9 +80,11 @@ export function NikCheckClient() {
   const [nikData, setNikData] = useState<NikData | null>(null);
   const [zodiacData, setZodiacData] = useState<ZodiacData | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [ektpImage, setEktpImage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isGeneratingEktp, setIsGeneratingEktp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [zodiacError, setZodiacError] = useState<string | null>(null);
 
@@ -92,9 +94,36 @@ export function NikCheckClient() {
   });
   
   useEffect(() => {
+    if (generatedImage && nikData) {
+      const fetchEktpImage = async () => {
+        setIsGeneratingEktp(true);
+        try {
+          const response = await fetch('/api/generate-ektp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nikData, imageUrl: generatedImage }),
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || "Failed to generate e-KTP image.");
+          }
+          setEktpImage(result.imageUrl);
+        } catch (e) {
+          console.error("e-KTP image generation failed:", e);
+        } finally {
+          setIsGeneratingEktp(false);
+        }
+      };
+      fetchEktpImage();
+    }
+  }, [generatedImage, nikData]);
+
+  useEffect(() => {
     if (zodiacData && nikData) {
       const fetchImage = async () => {
         setIsGeneratingImage(true);
+        setGeneratedImage(null);
+        setEktpImage(null);
         try {
           const response = await fetch('/api/generate-image', {
             method: 'POST',
@@ -152,11 +181,13 @@ export function NikCheckClient() {
     setIsChecking(true);
     setIsCheckingZodiac(false);
     setIsGeneratingImage(false);
+    setIsGeneratingEktp(false);
     setError(null);
     setZodiacError(null);
     setNikData(null);
     setZodiacData(null);
     setGeneratedImage(null);
+    setEktpImage(null);
 
     try {
       const response = await fetch(`/api/check-nik?nik=${values.nik}`);
@@ -305,6 +336,24 @@ export function NikCheckClient() {
                         ) : (
                              <div className="w-full aspect-square rounded-md bg-muted flex items-center justify-center">
                                 <p className="text-sm text-muted-foreground text-center p-4">Gambar akan dibuat setelah data NIK dan Zodiak berhasil dimuat.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center gap-2">
+                        <BadgeCheck className="h-5 w-5 text-primary"/>
+                        <CardTitle className="font-headline">e-KTP Digital</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isGeneratingEktp ? (
+                            <Skeleton className="w-full aspect-[85.6/53.98] rounded-md" />
+                        ) : ektpImage ? (
+                             <Image src={ektpImage} alt="Generated e-KTP" width={856} height={540} className="w-full rounded-md" data-ai-hint="id card" />
+                        ) : (
+                             <div className="w-full aspect-[85.6/53.98] rounded-md bg-muted flex items-center justify-center">
+                                <p className="text-sm text-muted-foreground text-center p-4">e-KTP akan dibuat setelah gambar representasi AI berhasil dimuat.</p>
                             </div>
                         )}
                     </CardContent>
