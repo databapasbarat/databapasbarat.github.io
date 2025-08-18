@@ -42,17 +42,20 @@ const getZodiacDetailsTool = ai.defineTool(
     outputSchema: z.any(),
   },
   async (input) => {
-    const url = `https://api.siputzx.my.id/api/primbon/zodiak?zodiak=${input.zodiac.toLowerCase()}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch zodiac details for ${input.zodiac}`);
+    try {
+      const url = `https://api.siputzx.my.id/api/primbon/zodiak?zodiak=${input.zodiac.toLowerCase()}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        return { error: `API request failed with status ${response.status}` };
+      }
+      const data = await response.json();
+      if (data.status === false || !data.data) {
+        return { error: `No details found for zodiac ${input.zodiac}` };
+      }
+      return data.data; // Return the data object directly
+    } catch (e: any) {
+      return { error: `Failed to fetch zodiac details: ${e.message}` };
     }
-    const data = await response.json();
-    if(data.status === false){
-      return `No details found for zodiac ${input.zodiac}`;
-    }
-    // Return only the data part which contains the description
-    return JSON.stringify(data.data);
   }
 );
 
@@ -76,7 +79,7 @@ Format output JSON harus seperti ini:
 Pastikan semua teks terasa personal, relevan dengan umur dan jenis kelamin mereka, dan 100% menggunakan bahasa Indonesia yang gaul.
 
 Nama: {{{name}}}
-Zodiak: {{{zodiak}}}
+Zodiak: {{{zodiac}}}
 Jenis Kelamin: {{{gender}}}
 Usia: {{{age}}}
 `,
@@ -94,7 +97,10 @@ const getZodiacSignFlow = ai.defineFlow(
     while (attempt < maxRetries) {
       try {
         const {output} = await prompt(input);
-        return output!;
+        if (output) {
+          return output;
+        }
+        throw new Error('Received null output from prompt.');
       } catch (error: any) {
         attempt++;
         if (error.message.includes('503') && attempt < maxRetries) {
@@ -106,6 +112,6 @@ const getZodiacSignFlow = ai.defineFlow(
       }
     }
     // This line should not be reached if maxRetries > 0, but is needed for type safety.
-    throw new Error('All retry attempts failed.');
+    throw new Error('All retry attempts failed to produce a valid output.');
   }
 );
