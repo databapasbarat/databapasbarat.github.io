@@ -37,7 +37,7 @@ const generateImageFlow = ai.defineFlow(
     outputSchema: GenerateImageOutputSchema,
   },
   async (input) => {
-    const prompt = `Buatlah potret artistik yang futuristik dan sureal dari seseorang bernama ${input.name}, seorang ${input.gender} berusia ${input.age} tahun.
+    const prompt = `Buatlah potret artistik yang futuristik dan sureal dari seseorang bernama ${input.name}, seorang ${input.gender} Indonesia berusia ${input.age} tahun. Pastikan orang dalam gambar memiliki ciri khas wajah orang Indonesia.
     Zodiaknya adalah ${input.zodiac}.
     Deskripsi kepribadian berdasarkan zodiak: ${input.zodiacDescription}.
     Arti namanya adalah: ${input.nameMeaning}.
