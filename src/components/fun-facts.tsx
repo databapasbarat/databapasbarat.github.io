@@ -2,7 +2,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { type GetFunFactsOutput } from "@/ai/flows/fun-fact-flow";
-import { Brain, Heart, Wind, Dna, Shield, Filter, Utensils, Eye, Moon, Dumbbell, Activity } from "lucide-react";
+import { Brain, Heart, Wind, Dna, Shield, Filter, Utensils, Eye, Moon, Dumbbell, Activity, BarChart3, Sparkles } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 
 interface FunFactsProps {
@@ -22,6 +22,8 @@ const factCategories = [
   { key: "sensory", title: "Indra", icon: Eye, unit: 'x' },
   { key: "hormonal", title: "Hormon", icon: Moon, unit: 'x' },
   { key: "physical", title: "Aktivitas Fisik", icon: Dumbbell, unit: 'x' },
+  { key: "comparison", title: "Perbandingan Hidup", icon: BarChart3, unit: '%' },
+  { key: "amazingFacts", title: "Fakta Menakjubkan", icon: Sparkles, unit: 'x' },
 ];
 
 const formatKey = (key: string) => {
@@ -32,7 +34,13 @@ const formatKey = (key: string) => {
     .trim();
 };
 
-const formatValue = (value: number) => {
+const formatValue = (value: number | object) => {
+    if (typeof value === 'object' && value !== null) {
+        return JSON.stringify(value, null, 2); // Pretty print object
+    }
+    if (typeof value !== 'number') {
+        return String(value);
+    }
     if (value > 1e12) return `${(value / 1e12).toFixed(2)} Triliun`;
     if (value > 1e9) return `${(value / 1e9).toFixed(2)} Miliar`;
     if (value > 1e6) return `${(value / 1e6).toFixed(2)} Juta`;
@@ -81,7 +89,7 @@ export function FunFacts({ data, isLoading }: FunFactsProps) {
                 {entries.map(([factKey, value]) => (
                   <li key={factKey} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{formatKey(factKey)}</span>
-                    <span className="font-medium">{formatValue(value as number)}</span>
+                    <span className="font-medium text-right">{formatValue(value as any)}</span>
                   </li>
                 ))}
               </ul>

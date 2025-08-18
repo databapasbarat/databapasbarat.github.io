@@ -25,6 +25,35 @@ const createSubSchema = (keys: string[]) => {
     return z.object(shape).optional();
 };
 
+const ComparisonSchema = z.object({
+  lifeExpectancy: z.object({
+    world: z.number(),
+    percentageLived: z.number(),
+  }).optional(),
+  breathingProgress: z.object({
+    averagePersonLifetime: z.number(),
+    yourProgress: z.number(),
+    percentageComplete: z.number(),
+  }).optional(),
+  heartbeatProgress: z.object({
+    averagePersonLifetime: z.number(),
+    yourProgress: z.number(),
+    percentageComplete: z.number(),
+  }).optional(),
+}).optional();
+
+const AmazingFactsSchema = z.object({
+  totalCellsInBody: z.number().optional(),
+  bacterialCellsInBody: z.number().optional(),
+  dnaLengthTotal: z.number().optional(),
+  informationProcessedByBrain: z.number().optional(),
+  heatGenerated: z.number().optional(),
+  waterTurnover: z.number().optional(),
+  electricalImpulses: z.number().optional(),
+  chemicalReactionsPerSecond: z.number().optional(),
+}).optional();
+
+
 const GetFunFactsOutputSchema = z.object({
   status: z.boolean(),
   data: z.object({
@@ -42,7 +71,8 @@ const GetFunFactsOutputSchema = z.object({
     sensory: createSubSchema(["eyeBlinks", "eyeMovements", "tasteExperiences", "smellsDetected", "touchSensations", "soundsProcessed"]),
     hormonal: createSubSchema(["hormonalCyclesCompleted", "insulinReleases", "stressResponseActivations", "circadianRhythms", "growthHormonePulses", "metabolicAdjustments"]),
     physical: createSubSchema(["muscleContractions", "stepsEstimated", "caloriesBurned", "jointMovements", "postureAdjustments", "balanceCorrections"]),
-    comparison: z.any().optional(),
+    comparison: ComparisonSchema,
+    amazingFacts: AmazingFactsSchema,
   }).optional(),
   error: z.string().optional(),
 });
