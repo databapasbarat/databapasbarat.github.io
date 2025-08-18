@@ -1,83 +1,52 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { cn } from "@/lib/utils";
 
-interface FlipClockCardProps {
-  value: number;
-  label: string;
-}
-
-const FlipClockCard = ({ value, label }: FlipClockCardProps) => {
-    const [currentValue, setCurrentValue] = useState(value);
-    const [previousValue, setPreviousValue] = useState(value);
-    const [isFlipping, setIsFlipping] = useState(false);
-
-    const formattedValue = String(value).padStart(2, '0');
-    const formattedCurrentValue = String(currentValue).padStart(2, '0');
-    const formattedPreviousValue = String(previousValue).padStart(2, '0');
-
-    useEffect(() => {
-        if (value !== currentValue) {
-            setPreviousValue(currentValue);
-            setCurrentValue(value);
-            setIsFlipping(true);
-            const timer = setTimeout(() => setIsFlipping(false), 600);
-            return () => clearTimeout(timer);
-        }
-    }, [value, currentValue]);
-
-
-    return (
-        <div className="flex flex-col items-center">
-            <div className="relative w-16 h-20 sm:w-24 sm:h-28 rounded-lg shadow-lg bg-secondary text-primary perspective">
-                {/* Static Top Half */}
-                <div className="absolute top-0 left-0 w-full h-1/2 bg-secondary rounded-t-lg overflow-hidden">
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-4xl sm:text-6xl font-bold">
-                        {formattedValue}
-                    </span>
-                </div>
-
-                {/* Static Bottom Half */}
-                <div className="absolute bottom-0 left-0 w-full h-1/2 bg-secondary rounded-b-lg overflow-hidden">
-                     <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-4xl sm:text-6xl font-bold">
-                        {formattedValue}
-                    </span>
-                </div>
-                
-                 {/* Top Flip Animation */}
-                <div 
-                    className={cn(
-                        "absolute top-0 left-0 w-full h-1/2 bg-primary text-primary-foreground rounded-t-lg overflow-hidden z-10 transform-origin-bottom",
-                        {"animate-flip-top": isFlipping}
-                    )}
-                >
-                     <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-4xl sm:text-6xl font-bold">
-                       {isFlipping ? formattedPreviousValue : formattedValue}
-                    </span>
-                </div>
-
-                {/* Bottom Flip Animation */}
-                <div 
-                    className={cn(
-                        "absolute bottom-0 left-0 w-full h-1/2 bg-primary text-primary-foreground rounded-b-lg overflow-hidden z-10 transform-origin-top",
-                        {"animate-flip-bottom": isFlipping}
-                    )}
-                >
-                     <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-4xl sm:text-6xl font-bold">
-                       {isFlipping ? formattedCurrentValue : formattedValue}
-                    </span>
-                </div>
-
-
-                {/* Separator */}
-                <div className="absolute top-1/2 left-0 w-full h-px bg-background/50 z-20"></div>
-            </div>
-            <span className="mt-2 text-sm sm:text-base font-medium text-muted-foreground">{label}</span>
-        </div>
-    );
+// Helper: Animated single number, scrolls like a tumbler
+const AnimatedNumber = ({ number }: { number: number }) => {
+  return (
+    <div
+      style={{
+        transform: `translateY(-${number * 100}%)`,
+      }}
+      className="flex flex-col transition-transform duration-500 ease-in-out"
+    >
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+        <span key={n} className="flex-shrink-0">
+          {n}
+        </span>
+      ))}
+    </div>
+  );
 };
 
+// Helper: Displays a number (e.g., 23) as two animated digits
+const NumberSlot = ({ value, pad = 2 }: { value: number; pad?: number }) => {
+  const digits = String(value).padStart(pad, '0').split('').map(Number);
+
+  return (
+    <div className="flex">
+      {digits.map((digit, index) => (
+        <div
+          key={index}
+          className="h-12 w-8 sm:h-16 sm:w-10 text-4xl sm:text-6xl font-bold overflow-hidden"
+        >
+          <AnimatedNumber number={digit} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+
+const TimeBlock = ({ value, label, pad }: { value: number; label: string, pad?: number }) => (
+  <div className="flex flex-col items-center">
+    <div className="flex p-2 bg-secondary rounded-lg shadow-inner">
+      <NumberSlot value={value} pad={pad} />
+    </div>
+    <span className="mt-2 text-sm sm:text-base font-medium text-muted-foreground">{label}</span>
+  </div>
+);
 
 // Helper function to parse date string "DD MMMM YYYY" in Indonesian
 const parseIndonesianDate = (dateString: string): Date | null => {
@@ -98,7 +67,6 @@ const parseIndonesianDate = (dateString: string): Date | null => {
 
 export function BirthdayCountdown({ birthDateString }: { birthDateString: string }) {
     const [timeLeft, setTimeLeft] = useState({
-        months: 0,
         days: 0,
         hours: 0,
         minutes: 0,
@@ -120,47 +88,30 @@ export function BirthdayCountdown({ birthDateString }: { birthDateString: string
             const distance = nextBirthday.getTime() - now.getTime();
 
             if (distance < 0) {
-                 setTimeLeft({ months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+                 setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
                  return;
             }
 
-            // More reliable calculation
-            let months = nextBirthday.getMonth() - now.getMonth();
-            let years = nextBirthday.getFullYear() - now.getFullYear();
-            if (months < 0) {
-              years--;
-              months += 12;
-            }
-            if (now.getDate() > nextBirthday.getDate() && nextBirthday.getMonth() === now.getMonth()) {
-               months--;
-            }
-
-            const totalSeconds = Math.floor(distance / 1000);
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            // Correct day calculation considering months
-            let tempDate = new Date(now);
-            tempDate.setMonth(tempDate.getMonth() + months);
-            const daysInMonth = Math.floor((nextBirthday.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
-
-
-            setTimeLeft({ months, days: days, hours, minutes, seconds });
+            setTimeLeft({ days, hours, minutes, seconds });
 
         }, 1000);
 
         return () => clearInterval(timer);
     }, [birthDateString]);
+    
+    const showDays = timeLeft.days > 0;
 
     return (
-        <div className="flex items-center justify-center space-x-2 sm:space-x-4">
-            {timeLeft.months > 0 && <FlipClockCard value={timeLeft.months} label="Bulan" />}
-            <FlipClockCard value={timeLeft.days} label="Hari" />
-            <FlipClockCard value={timeLeft.hours} label="Jam" />
-            <FlipClockCard value={timeLeft.minutes} label="Menit" />
-            <FlipClockCard value={timeLeft.seconds} label="Detik" />
+        <div className="flex items-center justify-center space-x-2 sm:space-x-4 text-primary">
+            {showDays && <TimeBlock value={timeLeft.days} label="Hari" pad={timeLeft.days > 99 ? 3 : 2}/>}
+            <TimeBlock value={timeLeft.hours} label="Jam" />
+            <TimeBlock value={timeLeft.minutes} label="Menit" />
+            <TimeBlock value={timeLeft.seconds} label="Detik" />
         </div>
     );
 }
