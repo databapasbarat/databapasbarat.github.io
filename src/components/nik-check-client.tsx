@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, Cake, BookText } from "lucide-react";
+import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, Cake, BookText, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,7 +33,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { getZodiacSign } from "@/ai/flows/zodiac-flow";
 import { getNameMeaning } from "@/ai/flows/name-meaning-flow";
+import { getFunFacts, type GetFunFactsOutput } from "@/ai/flows/fun-fact-flow";
 import { BirthdayCountdown } from "@/components/birthday-countdown";
+import { FunFacts } from "@/components/fun-facts";
 
 const formSchema = z.object({
   nik: z
@@ -85,14 +87,17 @@ export function NikCheckClient() {
   const [nikData, setNikData] = useState<NikData | null>(null);
   const [zodiacData, setZodiacData] = useState<ZodiacData | null>(null);
   const [nameMeaningData, setNameMeaningData] = useState<NameMeaningData | null>(null);
+  const [funFactsData, setFunFactsData] = useState<GetFunFactsOutput | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
   const [isCheckingNameMeaning, setIsCheckingNameMeaning] = useState(false);
+  const [isCheckingFunFacts, setIsCheckingFunFacts] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [zodiacError, setZodiacError] = useState<string | null>(null);
   const [nameMeaningError, setNameMeaningError] = useState<string | null>(null);
+  const [funFactsError, setFunFactsError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -107,6 +112,8 @@ export function NikCheckClient() {
       setZodiacError(null);
       setIsCheckingNameMeaning(true);
       setNameMeaningError(null);
+      setIsCheckingFunFacts(true);
+      setFunFactsError(null);
 
       const zodiacPromise = getZodiacSign({
         name: nikData.data.nama,
@@ -125,7 +132,13 @@ export function NikCheckClient() {
         return null;
       });
 
-      const [zodiacResult, nameMeaningResult] = await Promise.all([zodiacPromise, nameMeaningPromise]);
+      const funFactsPromise = getFunFacts({ birthDate: nikData.data.tempat_lahir }).catch(e => {
+        console.error("Fun facts check failed:", e);
+        setFunFactsError(e.message || "Gagal memuat data fakta menarik.");
+        return null;
+      })
+
+      const [zodiacResult, nameMeaningResult, funFactsResult] = await Promise.all([zodiacPromise, nameMeaningPromise, funFactsPromise]);
 
       if (zodiacResult) {
         setZodiacData({
@@ -143,6 +156,14 @@ export function NikCheckClient() {
         setNameMeaningData(null);
       }
       setIsCheckingNameMeaning(false);
+
+      if (funFactsResult && funFactsResult.status) {
+          setFunFactsData(funFactsResult);
+      } else {
+          setFunFactsData(null);
+          setFunFactsError(funFactsResult?.error || "Data fakta menarik tidak ditemukan.");
+      }
+      setIsCheckingFunFacts(false);
     };
     
     fetchAuxData();
@@ -192,9 +213,11 @@ export function NikCheckClient() {
     setError(null);
     setZodiacError(null);
     setNameMeaningError(null);
+    setFunFactsError(null);
     setNikData(null);
     setZodiacData(null);
     setNameMeaningData(null);
+    setFunFactsData(null);
     setGeneratedImage(null);
 
     try {
@@ -437,6 +460,17 @@ export function NikCheckClient() {
                 </CardHeader>
                 <CardContent className="px-0 sm:px-6">
                   {renderTable({ ...nikData.data, nik: nikData.nik }, ktpKeys)}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <BrainCircuit className="h-5 w-5 text-primary" />
+                  <CardTitle className="font-headline">Fakta Menarik Seumur Hidup</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <FunFacts data={funFactsData} isLoading={isCheckingFunFacts} />
+                    {funFactsError && !isCheckingFunFacts && <p className="text-sm text-destructive mt-2">{funFactsError}</p>}
                 </CardContent>
               </Card>
 
