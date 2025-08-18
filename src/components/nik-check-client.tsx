@@ -75,6 +75,7 @@ export function NikCheckClient() {
   const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [zodiacError, setZodiacError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -117,9 +118,10 @@ export function NikCheckClient() {
 
   const fetchZodiacData = async (name: string, birthdate: string) => {
       setIsCheckingZodiac(true);
+      setZodiacError(null);
       try {
           if (!birthdate) {
-            throw new Error("Birthdate is not available from NIK data.");
+            throw new Error("Tanggal lahir tidak tersedia dari data NIK.");
           }
           const [day, month, year] = birthdate.split('-');
           const formattedBirthdate = `${year}-${month}-${day}`;
@@ -133,12 +135,13 @@ export function NikCheckClient() {
           });
           const result = await response.json();
           if (!response.ok) {
-              throw new Error(result.error || "Failed to get zodiac data.");
+              throw new Error(result.error || "Gagal mendapatkan data zodiak.");
           }
           setZodiacData(result);
-      } catch (e) {
+      } catch (e: any) {
           console.error("Zodiac check failed:", e);
-          setZodiacData(null); // Clear previous data on error
+          setZodiacError(e.message || "Gagal memuat data zodiak.");
+          setZodiacData(null);
       } finally {
           setIsCheckingZodiac(false);
       }
@@ -150,6 +153,7 @@ export function NikCheckClient() {
     setIsCheckingZodiac(false);
     setIsGeneratingImage(false);
     setError(null);
+    setZodiacError(null);
     setNikData(null);
     setSummary(null);
     setZodiacData(null);
@@ -350,7 +354,7 @@ export function NikCheckClient() {
                                 </div>
                             </div>
                         ) : (
-                             <p className="text-sm text-muted-foreground">Gagal memuat data zodiak.</p>
+                             <p className="text-sm text-muted-foreground">{zodiacError || "Gagal memuat data zodiak."}</p>
                         )}
                     </CardContent>
                 </Card>
