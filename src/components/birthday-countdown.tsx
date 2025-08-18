@@ -2,55 +2,9 @@
 
 import { useState, useEffect } from 'react';
 
-// Helper: Animated single number, scrolls like a tumbler
-const AnimatedNumber = ({ number }: { number: number }) => {
-  return (
-    <div
-      style={{
-        transform: `translateY(-${number * 100}%)`,
-      }}
-      className="flex flex-col transition-transform duration-500 ease-in-out"
-    >
-      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-        <span key={n} className="flex-shrink-0">
-          {n}
-        </span>
-      ))}
-    </div>
-  );
-};
-
-// Helper: Displays a number (e.g., 23) as two animated digits
-const NumberSlot = ({ value, pad = 2 }: { value: number; pad?: number }) => {
-  const digits = String(value).padStart(pad, '0').split('').map(Number);
-
-  return (
-    <div className="flex">
-      {digits.map((digit, index) => (
-        <div
-          key={index}
-          className="h-12 w-8 sm:h-16 sm:w-10 text-4xl sm:text-6xl font-bold overflow-hidden"
-        >
-          <AnimatedNumber number={digit} />
-        </div>
-      ))}
-    </div>
-  );
-};
-
-
-const TimeBlock = ({ value, label, pad }: { value: number; label: string, pad?: number }) => (
-  <div className="flex flex-col items-center">
-    <div className="flex p-2 bg-secondary rounded-lg shadow-inner">
-      <NumberSlot value={value} pad={pad} />
-    </div>
-    <span className="mt-2 text-sm sm:text-base font-medium text-muted-foreground">{label}</span>
-  </div>
-);
-
-// Helper function to parse date string "DD MMMM YYYY" in Indonesian
+// Helper untuk mem-parsing tanggal lahir dalam format Indonesia.
+// Contoh input: "Bandung, 15 Mei 1990" atau "15 Mei 1990"
 const parseIndonesianDate = (dateString: string): Date | null => {
-    // Example input: "Bandung, 15 Mei 1990" or "15 Mei 1990"
     const datePart = dateString.includes(',') ? dateString.split(',')[1].trim() : dateString.trim();
     const parts = datePart.split(' ');
     if (parts.length < 3) return null;
@@ -66,6 +20,17 @@ const parseIndonesianDate = (dateString: string): Date | null => {
     return new Date(year, monthIndex, day);
 };
 
+// Komponen untuk menampilkan satu blok waktu (misal: "12" dan "Hari")
+const TimeBlock = ({ value, label }: { value: number; label: string }) => (
+  <div className="flex flex-col items-center">
+    <div className="flex justify-center items-center w-20 h-20 sm:w-24 sm:h-24 bg-secondary rounded-lg shadow-inner">
+      <span className="text-4xl sm:text-5xl font-bold text-primary tracking-tight">
+        {String(value).padStart(2, '0')}
+      </span>
+    </div>
+    <span className="mt-2 text-sm sm:text-base font-medium text-muted-foreground">{label}</span>
+  </div>
+);
 
 export function BirthdayCountdown({ birthDateString }: { birthDateString: string }) {
     const [timeLeft, setTimeLeft] = useState({
@@ -85,6 +50,7 @@ export function BirthdayCountdown({ birthDateString }: { birthDateString: string
             const now = new Date();
             let nextBirthday = new Date(now.getFullYear(), birthDate.getMonth(), birthDate.getDate());
 
+            // Jika ulang tahun tahun ini sudah lewat, hitung untuk tahun depan
             if (now > nextBirthday) {
                 nextBirthday.setFullYear(now.getFullYear() + 1);
             }
@@ -105,25 +71,25 @@ export function BirthdayCountdown({ birthDateString }: { birthDateString: string
 
         }, 1000);
 
+        // Membersihkan interval saat komponen di-unmount
         return () => clearInterval(timer);
     }, [birthDateString]);
 
+    // Menampilkan placeholder saat komponen pertama kali render di server
     if (!isMounted) {
       return (
-        <div className="flex items-center justify-center space-x-2 sm:space-x-4 text-primary">
-          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
-          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
-          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
-          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
+        <div className="flex items-center justify-center space-x-2 sm:space-x-4">
+          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
+          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
+          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
+          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
         </div>
       );
     }
-    
-    const showDays = timeLeft.days > 0;
 
     return (
-        <div className="flex items-center justify-center space-x-2 sm:space-x-4 text-primary">
-            {showDays && <TimeBlock value={timeLeft.days} label="Hari" pad={timeLeft.days > 99 ? 3 : 2}/>}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+            <TimeBlock value={timeLeft.days} label="Hari" />
             <TimeBlock value={timeLeft.hours} label="Jam" />
             <TimeBlock value={timeLeft.minutes} label="Menit" />
             <TimeBlock value={timeLeft.seconds} label="Detik" />
