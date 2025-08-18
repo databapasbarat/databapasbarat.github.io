@@ -14,7 +14,6 @@ import {z} from 'genkit';
 const GenerateImageInputSchema = z.object({
   name: z.string().describe("The person's name."),
   zodiac: z.string().describe("The person's zodiac sign."),
-  shio: z.string().describe("The person's shio."),
 });
 export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
 
@@ -35,8 +34,8 @@ const generateImageFlow = ai.defineFlow(
   },
   async (input) => {
     const prompt = `Buatlah potret artistik yang futuristik dan sureal dari seseorang bernama ${input.name}. 
-    Zodiaknya adalah ${input.zodiac} dan shionya adalah ${input.shio}.
-    Gabungkan elemen kosmik dan fantasi yang mewakili zodiak dan shio mereka secara halus. 
+    Zodiaknya adalah ${input.zodiac}.
+    Gabungkan elemen kosmik dan fantasi yang mewakili zodiak mereka secara halus. 
     Gaya gambar harus menyerupai lukisan digital sinematik dengan pencahayaan dramatis, detail yang kaya, dan estetika profesional yang cocok untuk avatar digital.`;
     
     const {media} = await ai.generate({

@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Generates a personality description based on Zodiac and Shio.
+ * @fileOverview Generates a personality description based on Zodiac.
  *
  * - getZodiacSign - A function that gets a personality description.
  * - GetZodiacSignInput - The input type for the getZodiacSign function.
@@ -14,12 +14,11 @@ import {z} from 'genkit';
 const GetZodiacSignInputSchema = z.object({
   name: z.string().describe("The person's name."),
   zodiac: z.string().describe("The person's zodiac sign."),
-  shio: z.string().describe("The person's shio."),
 });
 export type GetZodiacSignInput = z.infer<typeof GetZodiacSignInputSchema>;
 
 const GetZodiacSignOutputSchema = z.object({
-  personality: z.string().describe('A personality description based on the zodiac and shio.'),
+  personality: z.string().describe('A personality description based on the zodiac.'),
 });
 export type GetZodiacSignOutput = z.infer<typeof GetZodiacSignOutputSchema>;
 
@@ -57,13 +56,12 @@ const prompt = ai.definePrompt({
   input: {schema: GetZodiacSignInputSchema},
   output: {schema: GetZodiacSignOutputSchema},
   tools: [getZodiacDetailsTool],
-  prompt: `Anda adalah seorang ahli astrologi dan ahli Feng Shui yang bijaksana. Berdasarkan nama, zodiak, dan shio yang diberikan, buatlah deskripsi kepribadian yang ramah, positif, dan mendalam dalam Bahasa Indonesia.
+  prompt: `Anda adalah seorang ahli astrologi yang bijaksana. Berdasarkan nama dan zodiak yang diberikan, buatlah deskripsi kepribadian yang ramah, positif, dan mendalam dalam Bahasa Indonesia.
 Gunakan tool 'getZodiacDetails' untuk mendapatkan informasi mendalam tentang zodiak yang diberikan.
 Berikan analisis yang inspiratif dan puitis tentang kekuatan, potensi, dan mungkin sedikit tantangan yang bisa diwaspadai dengan gaya bahasa yang memotivasi, berdasarkan informasi dari tool dan data yang diberikan.
 
 Nama: {{{name}}}
 Zodiak: {{{zodiac}}}
-Shio: {{{shio}}}
 `,
 });
 

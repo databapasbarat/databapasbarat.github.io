@@ -3,13 +3,13 @@ import { generateImage } from '@/ai/flows/generate-image-flow';
 
 export async function POST(request: Request) {
   try {
-    const { name, zodiac, shio } = await request.json();
+    const { name, zodiac } = await request.json();
 
-    if (!name || !zodiac || !shio) {
-      return NextResponse.json({ error: 'Name, zodiac, and shio are required.' }, { status: 400 });
+    if (!name || !zodiac) {
+      return NextResponse.json({ error: 'Name and zodiac are required.' }, { status: 400 });
     }
     
-    const result = await generateImage({ name, zodiac, shio });
+    const result = await generateImage({ name, zodiac });
 
     return NextResponse.json({ imageUrl: result.imageUrl });
 

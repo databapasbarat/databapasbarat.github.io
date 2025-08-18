@@ -46,7 +46,6 @@ interface NikData {
     data: {
         nama: string;
         zodiak: string;
-        shio?: string;
         koordinat?: {
             lat: string;
             lon: string;
@@ -73,7 +72,6 @@ interface ApiResponse {
 
 interface ZodiacData {
   zodiac: string;
-  shio: string;
   personality: string;
 }
 
@@ -106,7 +104,6 @@ export function NikCheckClient() {
             body: JSON.stringify({
               name: nikData.data.nama,
               zodiac: zodiacData.zodiac,
-              shio: zodiacData.shio,
             }),
           });
           const result = await response.json();
@@ -126,7 +123,7 @@ export function NikCheckClient() {
   }, [zodiacData, nikData]);
 
 
-  const fetchZodiacData = async (name: string, zodiac: string, shio: string | undefined) => {
+  const fetchZodiacData = async (name: string, zodiac: string) => {
       setIsCheckingZodiac(true);
       setZodiacError(null);
       try {
@@ -136,10 +133,9 @@ export function NikCheckClient() {
             return;
           }
 
-          const personalityResult = await getZodiacSign({ name: name, zodiac, shio: shio || 'Tidak diketahui' });
+          const personalityResult = await getZodiacSign({ name: name, zodiac });
           setZodiacData({
               zodiac,
-              shio: shio || "Tidak Diketahui",
               personality: personalityResult.personality,
           });
 
@@ -180,7 +176,7 @@ export function NikCheckClient() {
       setNikData(extractedData);
       
       if (extractedData.data.zodiak) {
-        fetchZodiacData(extractedData.data.nama, extractedData.data.zodiak, extractedData.data.shio);
+        fetchZodiacData(extractedData.data.nama, extractedData.data.zodiak);
       } else {
         setIsCheckingZodiac(false);
         setZodiacError("Zodiak tidak tersedia dari data NIK.");
@@ -217,7 +213,7 @@ export function NikCheckClient() {
         <CardHeader>
           <CardTitle className="font-headline">Cek Data NIK e-KTP</CardTitle>
           <CardDescription>
-            Masukkan 16 digit Nomor Induk Kependudukan (NIK) Anda untuk melihat data kependudukan, zodiak, shio, dan representasi gambar AI Anda.
+            Masukkan 16 digit Nomor Induk Kependudukan (NIK) Anda untuk melihat data kependudukan, zodiak, dan representasi gambar AI Anda.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -317,12 +313,11 @@ export function NikCheckClient() {
                 <Card>
                     <CardHeader className="flex flex-row items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary"/>
-                        <CardTitle className="font-headline">Zodiak & Shio</CardTitle>
+                        <CardTitle className="font-headline">Zodiak</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isCheckingZodiac ? (
                             <div className="space-y-4">
-                                <Skeleton className="h-4 w-1/4" />
                                 <Skeleton className="h-4 w-1/4" />
                                 <Skeleton className="h-4 w-full mt-4" />
                                 <Skeleton className="h-4 w-full" />
@@ -332,12 +327,7 @@ export function NikCheckClient() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold">Zodiak</h3>
-                                    <p className="text-muted-foreground">{zodiacData.zodiak}</p>
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold">Shio</h3>
-                                    <p className="text-muted-foreground">{zodiacData.shio}</p>
-
+                                    <p className="text-muted-foreground">{zodiacData.zodiac}</p>
                                 </div>
                                 <div>
                                     <h3 className="font-semibold">Analisis Kepribadian AI</h3>
