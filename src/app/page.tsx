@@ -1,7 +1,5 @@
-import { Landmark, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { Landmark } from "lucide-react";
 import { NikCheckClient } from "@/components/nik-check-client";
-import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -12,14 +10,6 @@ export default function Home() {
             <Landmark className="h-6 w-6 text-primary" />
             <span className="ml-2 font-bold font-headline">NIK & Zodiac Check</span>
           </div>
-          <nav>
-            <Button asChild variant="outline">
-              <Link href="/zodiac">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Zodiac by Date
-              </Link>
-            </Button>
-          </nav>
         </div>
       </header>
       <main className="flex-1">

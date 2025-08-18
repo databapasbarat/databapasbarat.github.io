@@ -10,18 +10,17 @@ export async function POST(request: Request) {
     }
 
     // Call external API to get zodiac and shio
-    const url = `https://api.siputzx.my.id/api/primbon/zodiac?tgl=${birthdate.split('-')[2]}&bln=${birthdate.split('-')[1]}&thn=${birthdate.split('-')[0]}`;
+    const zodiacShioUrl = `https://api.siputzx.my.id/api/primbon/zodiac?tgl=${birthdate.split('-')[2]}&bln=${birthdate.split('-')[1]}&thn=${birthdate.split('-')[0]}`;
     
-    const apiResponse = await fetch(url);
-    const apiData = await apiResponse.json();
+    const zodiacShioResponse = await fetch(zodiacShioUrl);
+    const zodiacShioData = await zodiacShioResponse.json();
 
-    if (!apiResponse.ok || apiData.status === false) {
-      return NextResponse.json({ error: apiData.message || 'Failed to get data from zodiac API.' }, { status: apiResponse.status });
+    if (!zodiacShioResponse.ok || zodiacShioData.status === false) {
+      return NextResponse.json({ error: zodiacShioData.message || 'Failed to get data from zodiac API.' }, { status: zodiacShioResponse.status });
     }
 
-    const { zodiac, shio } = apiData.data;
+    const { zodiac, shio } = zodiacShioData.data;
 
-    // Call Genkit flow to get personality
     const personalityResult = await getZodiacSign({ name, zodiac, shio });
 
     return NextResponse.json({
