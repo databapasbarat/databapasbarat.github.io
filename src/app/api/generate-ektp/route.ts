@@ -46,11 +46,20 @@ export async function POST(request: Request) {
         throw new Error('Failed to generate e-KTP image from external API.');
     }
     
+    const contentType = ektpResponse.headers.get('content-type');
+    
+    // If the content type is not an image, it's likely an error message from the API
+    if (contentType && !contentType.startsWith('image/')) {
+        const errorText = await ektpResponse.text();
+        console.error("e-KTP API returned a non-image response:", errorText);
+        throw new Error(`e-KTP API error: ${errorText}`);
+    }
+    
     const imageBuffer = await ektpResponse.arrayBuffer();
     const imageBase64 = Buffer.from(imageBuffer).toString('base64');
-    const contentType = ektpResponse.headers.get('content-type') || 'image/jpeg';
+    const responseContentType = contentType || 'image/jpeg';
 
-    const dataUrl = `data:${contentType};base64,${imageBase64}`;
+    const dataUrl = `data:${responseContentType};base64,${imageBase64}`;
 
     return NextResponse.json({ imageUrl: dataUrl });
 
