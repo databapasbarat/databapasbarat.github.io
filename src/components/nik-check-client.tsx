@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, Cake, BookText, BrainCircuit } from "lucide-react";
+import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, Cake, BookText, BrainCircuit, CheckCircle, XCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,7 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getZodiacSign } from "@/ai/flows/zodiac-flow";
+import { getZodiacSign, type GetZodiacSignOutput } from "@/ai/flows/zodiac-flow";
 import { getNameMeaning } from "@/ai/flows/name-meaning-flow";
 import { getFunFacts, type GetFunFactsOutput } from "@/ai/flows/fun-fact-flow";
 import { BirthdayCountdown } from "@/components/birthday-countdown";
@@ -74,7 +74,7 @@ interface ApiResponse {
 
 interface ZodiacData {
   zodiac: string;
-  personality: string;
+  analysis: GetZodiacSignOutput;
 }
 
 interface NameMeaningData {
@@ -143,7 +143,7 @@ export function NikCheckClient() {
       if (zodiacResult) {
         setZodiacData({
           zodiac: nikData.data.zodiak,
-          personality: zodiacResult.personality,
+          analysis: zodiacResult,
         });
       } else {
         setZodiacData(null);
@@ -184,7 +184,7 @@ export function NikCheckClient() {
             body: JSON.stringify({
               name: nikData.data.nama,
               zodiac: zodiacData.zodiac,
-              zodiacDescription: zodiacData.personality,
+              zodiacDescription: zodiacData.analysis.description,
               nameMeaning: nameMeaningData.arti,
               gender: nikData.data.kelamin,
               age: nikData.data.usia,
@@ -270,6 +270,40 @@ export function NikCheckClient() {
     'nik', 'nama', 'kelamin', 'tempat_lahir', 'usia', 'provinsi', 
     'kabupaten', 'kecamatan', 'kelurahan'
   ];
+
+  const renderZodiacAnalysis = () => {
+    if (!zodiacData) return null;
+    const { analysis } = zodiacData;
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h3 className="text-xl font-bold text-primary">{analysis.title}</h3>
+                <p className="text-sm text-muted-foreground">Analisis Kepribadian untuk Zodiak {zodiacData.zodiac}</p>
+            </div>
+            <p className="text-muted-foreground italic">"{analysis.description}"</p>
+            
+            <div>
+                <h4 className="font-semibold text-md mb-2 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500" />Kekuatan Kamu</h4>
+                <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                    {analysis.strengths.map((item, index) => <li key={index}>{item}</li>)}
+                </ul>
+            </div>
+
+            <div>
+                <h4 className="font-semibold text-md mb-2 flex items-center gap-2"><XCircle className="h-5 w-5 text-amber-500" />Tantangan Kecil</h4>
+                 <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                    {analysis.weaknesses.map((item, index) => <li key={index}>{item}</li>)}
+                </ul>
+            </div>
+
+            <div>
+                 <h4 className="font-semibold text-md mb-2 flex items-center gap-2"><Star className="h-5 w-5 text-yellow-400" />Saran Buat Kamu</h4>
+                <p className="text-muted-foreground">{analysis.advice}</p>
+            </div>
+        </div>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -377,27 +411,20 @@ export function NikCheckClient() {
                 <Card>
                     <CardHeader className="flex flex-row items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary"/>
-                        <CardTitle className="font-headline">Zodiak</CardTitle>
+                        <CardTitle className="font-headline">Analisis Zodiak</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isCheckingZodiac ? (
                             <div className="space-y-4">
-                                <Skeleton className="h-4 w-1/4" />
-                                <Skeleton className="h-4 w-full mt-4" />
+                                <Skeleton className="h-6 w-3/4 mb-4" />
+                                <Skeleton className="h-4 w-full" />
                                 <Skeleton className="h-4 w-full" />
                                 <Skeleton className="h-4 w-2/3" />
+                                <Skeleton className="h-4 w-1/2 mt-4" />
+                                <Skeleton className="h-4 w-3/4" />
                             </div>
                         ) : zodiacData ? (
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-semibold">Zodiak</h3>
-                                    <p className="text-muted-foreground">{zodiacData.zodiak}</p>
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold">Analisis Kepribadian AI</h3>
-                                    <p className="text-muted-foreground">{zodiacData.personality}</p>
-                                </div>
-                            </div>
+                            renderZodiacAnalysis()
                         ) : (
                              <p className="text-sm text-muted-foreground">{zodiacError || "Data zodiak tidak tersedia."}</p>
                         )}

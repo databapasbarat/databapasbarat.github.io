@@ -20,7 +20,11 @@ const GetZodiacSignInputSchema = z.object({
 export type GetZodiacSignInput = z.infer<typeof GetZodiacSignInputSchema>;
 
 const GetZodiacSignOutputSchema = z.object({
-  personality: z.string().describe('A personality description based on the zodiac.'),
+  title: z.string().describe("A fun, engaging title for the personality analysis."),
+  description: z.string().describe("A general, cheerful paragraph describing the person based on their zodiac."),
+  strengths: z.array(z.string()).describe("A list of 3-4 key strengths or positive traits."),
+  weaknesses: z.array(z.string()).describe("A list of 1-2 minor challenges or weaknesses, framed constructively."),
+  advice: z.string().describe("A short, encouraging piece of advice."),
 });
 export type GetZodiacSignOutput = z.infer<typeof GetZodiacSignOutputSchema>;
 
@@ -58,10 +62,18 @@ const prompt = ai.definePrompt({
   input: {schema: GetZodiacSignInputSchema},
   output: {schema: GetZodiacSignOutputSchema},
   tools: [getZodiacDetailsTool],
-  prompt: `Kamu itu kayak temen deket yang jago banget baca bintang. Pake bahasa gaul yang asik dan ceria ya!
-Berdasarkan nama, zodiak, jenis kelamin, dan umur yang dikasih, jelasin kepribadian mereka.
+  prompt: `Kamu itu kayak temen deket yang jago banget baca bintang. Pake bahasa gaul yang asik, ceria, dan profesional.
+Berdasarkan nama, zodiak, jenis kelamin, dan umur yang dikasih, jelasin kepribadian mereka dalam format yang rapi dan menarik.
 Ambil info detail zodiaknya pake tool 'getZodiacDetails'.
-Kasih tau kekuatan, potensi, dan tantangan kecilnya pake gaya yang fun, positif, dan personal banget sesuai umur dan gendernya.
+Format outputmu harus dalam bentuk JSON yang sudah ditentukan.
+
+- **title**: Buat judul yang catchy, misalnya "Si Paling {{zodiac}} Sejagad Raya!".
+- **description**: Tulis deskripsi umum yang fun dan positif.
+- **strengths**: Kasih daftar 3-4 kekuatan utama mereka dalam bentuk poin.
+- **weaknesses**: Kasih daftar 1-2 tantangan kecil mereka, tapi sampaikan dengan cara yang membangun.
+- **advice**: Beri nasihat singkat yang memotivasi.
+
+Pastikan semua teks menggunakan gaya bahasa yang fun, positif, dan personal banget sesuai umur dan gendernya.
 
 Nama: {{{name}}}
 Zodiak: {{{zodiac}}}
