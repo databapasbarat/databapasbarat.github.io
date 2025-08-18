@@ -9,13 +9,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'NIK data and image URL are required.' }, { status: 400 });
     }
     
-    // Construct the query parameters from nikData
+    // Construct the query parameters from nikData, providing empty strings as fallbacks
     const params = new URLSearchParams({
         provinsi: nikData.data.provinsi || '',
-        kota: nikData.data.kabupaten || '',
+        kota: nikData.data.kabupaten || nikData.data.kota || '',
         nik: nikData.nik || '',
         nama: nikData.data.nama || '',
-        ttl: `${nikData.data.tempat_lahir || ''}`,
+        ttl: nikData.data.tempat_lahir || '',
         jenis_kelamin: nikData.data.kelamin || '',
         golongan_darah: nikData.data.gol_darah || '-',
         alamat: nikData.data.alamat || '',
