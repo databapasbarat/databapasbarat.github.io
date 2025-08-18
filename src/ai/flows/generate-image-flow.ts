@@ -35,11 +35,11 @@ const generateImageFlow = ai.defineFlow(
     outputSchema: GenerateImageOutputSchema,
   },
   async (input) => {
-    const prompt = `Generate a futuristic and modern artistic portrait of a person named ${input.name}. 
-    This person's zodiac sign is ${input.zodiac} and their shio is ${input.shio}.
-    Incorporate subtle visual elements representing their zodiac and shio.
-    Additional context: ${input.summary}.
-    The style should be sleek, with clean lines, and a professional aesthetic suitable for a digital avatar.`;
+    const prompt = `Buatlah potret artistik yang futuristik dan sureal dari seseorang bernama ${input.name}. 
+    Zodiaknya adalah ${input.zodiac} dan shionya adalah ${input.shio}.
+    Gabungkan elemen kosmik dan fantasi yang mewakili zodiak dan shio mereka secara halus. 
+    Konteks tambahan: ${input.summary}.
+    Gaya gambar harus menyerupai lukisan digital sinematik dengan pencahayaan dramatis, detail yang kaya, dan estetika profesional yang cocok untuk avatar digital.`;
     
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',

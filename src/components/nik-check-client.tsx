@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, User, Camera, MapPin } from "lucide-react";
+import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, Camera, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -173,7 +173,6 @@ export function NikCheckClient() {
 
       setNikData(result.data);
       
-      // Fetch Zodiac Data only if birthdate is available
       if (result.data.data.tanggal_lahir) {
         fetchZodiacData(result.data.data.nama_lengkap, result.data.data.tanggal_lahir);
       } else {
@@ -181,7 +180,6 @@ export function NikCheckClient() {
         setZodiacError("Tanggal lahir tidak tersedia dari data NIK untuk mendapatkan zodiak.");
       }
 
-      // Fetch AI Summary
       setIsSummarizing(true);
       summarizeNikData({ nikData: JSON.stringify(result.data) })
         .then((summaryResult) => {
@@ -356,6 +354,7 @@ export function NikCheckClient() {
                                 <div>
                                     <h3 className="font-semibold">Shio</h3>
                                     <p className="text-muted-foreground">{zodiacData.shio}</p>
+
                                 </div>
                                 <div>
                                     <h3 className="font-semibold">Analisis Kepribadian AI</h3>

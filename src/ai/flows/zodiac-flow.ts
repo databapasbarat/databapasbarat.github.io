@@ -31,10 +31,11 @@ const prompt = ai.definePrompt({
   name: 'getZodiacSignPrompt',
   input: {schema: GetZodiacSignInputSchema},
   output: {schema: GetZodiacSignOutputSchema},
-  prompt: `You are an astrologer. Based on the provided name, zodiac, and shio, generate a friendly and positive personality description in Indonesian.
+  prompt: `Anda adalah seorang ahli astrologi dan ahli Feng Shui yang bijaksana. Berdasarkan nama, zodiak, dan shio yang diberikan, buatlah deskripsi kepribadian yang ramah, positif, dan mendalam dalam Bahasa Indonesia.
+Berikan analisis yang inspiratif tentang kekuatan, potensi, dan mungkin sedikit tantangan yang bisa diwaspadai dengan gaya bahasa yang puitis dan memotivasi.
 
-Name: {{{name}}}
-Zodiac: {{{zodiac}}}
+Nama: {{{name}}}
+Zodiak: {{{zodiac}}}
 Shio: {{{shio}}}
 `,
 });
