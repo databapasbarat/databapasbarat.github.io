@@ -75,8 +75,24 @@ const getZodiacSignFlow = ai.defineFlow(
     inputSchema: GetZodiacSignInputSchema,
     outputSchema: GetZodiacSignOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input, streamingCallback, context) => {
+    const maxRetries = 3;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        const {output} = await prompt(input);
+        return output!;
+      } catch (error: any) {
+        attempt++;
+        if (error.message.includes('503') && attempt < maxRetries) {
+          console.log(`Attempt ${attempt} failed with 503 error. Retrying in 2 seconds...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } else {
+          throw error;
+        }
+      }
+    }
+    // This line should not be reached if maxRetries > 0, but is needed for type safety.
+    throw new Error('All retry attempts failed.');
   }
 );
