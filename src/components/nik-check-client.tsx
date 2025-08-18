@@ -118,6 +118,9 @@ export function NikCheckClient() {
   const fetchZodiacData = async (name: string, birthdate: string) => {
       setIsCheckingZodiac(true);
       try {
+          if (!birthdate) {
+            throw new Error("Birthdate is not available from NIK data.");
+          }
           const [day, month, year] = birthdate.split('-');
           const formattedBirthdate = `${year}-${month}-${day}`;
 
