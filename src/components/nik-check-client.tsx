@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -170,51 +170,45 @@ export function NikCheckClient() {
     fetchAuxData();
   }, [nikData]);
 
-  useEffect(() => {
-    const canGenerateImage = 
-        nikData?.data?.nama &&
-        zodiacData?.zodiac &&
-        zodiacData?.analysis?.description &&
-        nameMeaningData?.arti &&
-        nikData?.data?.kelamin &&
-        nikData?.data?.usia;
+    const fetchImage = useCallback(async () => {
+        if (!nikData?.data || !zodiacData?.analysis || !nameMeaningData) return;
 
-    if (canGenerateImage) {
-      const fetchImage = async () => {
         setIsGeneratingImage(true);
         setGeneratedImage(null);
         setError(null);
+
         try {
-          const response = await fetch('/api/generate-image', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              name: nikData.data.nama,
-              zodiac: zodiacData.zodiac,
-              zodiacDescription: zodiacData.analysis.description,
-              nameMeaning: nameMeaningData.arti,
-              gender: nikData.data.kelamin,
-              age: nikData.data.usia,
-            }),
-          });
-          const result = await response.json();
-          if (!response.ok) {
-            throw new Error(result.error || "Failed to generate image.");
-          }
-          setGeneratedImage(result.imageUrl);
+            const response = await fetch('/api/generate-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: nikData.data.nama,
+                    zodiac: zodiacData.zodiac,
+                    zodiacDescription: zodiacData.analysis.description,
+                    nameMeaning: nameMeaningData.arti,
+                    gender: nikData.data.kelamin,
+                    age: nikData.data.usia,
+                }),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to generate image.");
+            }
+            setGeneratedImage(result.imageUrl);
         } catch (e: any) {
-          console.error("Image generation failed:", e);
-          setError(`Image Generation Failed: ${e.message}`);
-          setGeneratedImage(null);
+            console.error("Image generation failed:", e);
+            setError(`Image Generation Failed: ${e.message}`);
+            setGeneratedImage(null);
         } finally {
-          setIsGeneratingImage(false);
+            setIsGeneratingImage(false);
         }
-      };
-      fetchImage();
-    }
-  }, [zodiacData, nikData, nameMeaningData]);
+    }, [nikData, zodiacData, nameMeaningData]);
+
+    useEffect(() => {
+        if (nikData && zodiacData && nameMeaningData) {
+            fetchImage();
+        }
+    }, [nikData, zodiacData, nameMeaningData, fetchImage]);
   
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
