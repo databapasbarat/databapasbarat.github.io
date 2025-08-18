@@ -172,8 +172,16 @@ export function NikCheckClient() {
   }, [nikData]);
 
   useEffect(() => {
-    // Ensure all required data is available and valid before generating the image
-    if (nikData?.data && zodiacData?.analysis && nameMeaningData?.arti) {
+    const canGenerateImage = 
+        nikData?.data?.nama &&
+        zodiacData?.zodiac &&
+        zodiacData?.analysis?.description &&
+        nameMeaningData?.arti &&
+        nikData?.data?.kelamin &&
+        nikData?.data?.usia &&
+        nikData?.data?.shio;
+
+    if (canGenerateImage) {
       const fetchImage = async () => {
         setIsGeneratingImage(true);
         setGeneratedImage(null);
@@ -276,7 +284,7 @@ export function NikCheckClient() {
   ];
 
   const renderZodiacAnalysis = () => {
-    if (!zodiacData) return null;
+    if (!zodiacData?.analysis) return null;
     const { analysis } = zodiacData;
 
     return (
@@ -531,5 +539,3 @@ export function NikCheckClient() {
     </div>
   );
 }
-
-    
