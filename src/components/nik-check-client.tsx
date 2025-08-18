@@ -4,7 +4,7 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle } from "lucide-react";
+import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,7 +42,11 @@ const formSchema = z.object({
 
 interface NikData {
   nik: string;
-  data: Record<string, any>;
+  data: {
+      nama_lengkap: string;
+      tanggal_lahir: string;
+      [key: string]: any;
+  };
   metadata: Record<string, any>;
   data_lhp: Record<string, any>[];
 }
@@ -53,11 +57,20 @@ interface ApiResponse {
   message?: string;
 }
 
+interface ZodiacData {
+  zodiac: string;
+  shio: string;
+  personality: string;
+}
+
+
 export function NikCheckClient() {
   const [nikData, setNikData] = useState<NikData | null>(null);
+  const [zodiacData, setZodiacData] = useState<ZodiacData | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -65,12 +78,40 @@ export function NikCheckClient() {
     defaultValues: { nik: "" },
   });
 
+  const fetchZodiacData = async (name: string, birthdate: string) => {
+      setIsCheckingZodiac(true);
+      try {
+          const [day, month, year] = birthdate.split('-');
+          const formattedBirthdate = `${year}-${month}-${day}`;
+
+          const response = await fetch('/api/zodiac', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ name: name, birthdate: formattedBirthdate }),
+          });
+          const result = await response.json();
+          if (!response.ok) {
+              throw new Error(result.error || "Failed to get zodiac data.");
+          }
+          setZodiacData(result);
+      } catch (e) {
+          console.error("Zodiac check failed:", e);
+          setZodiacData(null); // Clear previous data on error
+      } finally {
+          setIsCheckingZodiac(false);
+      }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsChecking(true);
     setIsSummarizing(false);
+    setIsCheckingZodiac(false);
     setError(null);
     setNikData(null);
     setSummary(null);
+    setZodiacData(null);
 
     try {
       const response = await fetch(`/api/check-nik?nik=${values.nik}`);
@@ -81,8 +122,12 @@ export function NikCheckClient() {
       }
 
       setNikData(result.data);
-      setIsSummarizing(true);
       
+      // Fetch Zodiac Data
+      fetchZodiacData(result.data.data.nama_lengkap, result.data.data.tanggal_lahir);
+
+      // Fetch AI Summary
+      setIsSummarizing(true);
       summarizeNikData({ nikData: JSON.stringify(result.data) })
         .then((summaryResult) => {
           setSummary(summaryResult.summary);
@@ -120,7 +165,7 @@ export function NikCheckClient() {
         <CardHeader>
           <CardTitle className="font-headline">Cek Data NIK e-KTP</CardTitle>
           <CardDescription>
-            Masukkan 16 digit Nomor Induk Kependudukan (NIK) Anda untuk melihat data.
+            Masukkan 16 digit Nomor Induk Kependudukan (NIK) Anda untuk melihat data kependudukan, zodiak, dan shio Anda.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -212,6 +257,41 @@ export function NikCheckClient() {
                         </div>
                     ) : (
                         <p className="text-sm text-muted-foreground">{summary}</p>
+                    )}
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary"/>
+                    <CardTitle className="font-headline">Zodiak & Shio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {isCheckingZodiac ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-4 w-full mt-4" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-2/3" />
+                        </div>
+                    ) : zodiacData ? (
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="font-semibold">Zodiak</h3>
+                                <p className="text-muted-foreground">{zodiacData.zodiac}</p>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold">Shio</h3>
+                                <p className="text-muted-foreground">{zodiacData.shio}</p>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold">Analisis Kepribadian AI</h3>
+                                <p className="text-muted-foreground">{zodiacData.personality}</p>
+                            </div>
+                        </div>
+                    ) : (
+                         <p className="text-sm text-muted-foreground">Gagal memuat data zodiak.</p>
                     )}
                 </CardContent>
             </Card>

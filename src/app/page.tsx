@@ -10,13 +10,13 @@ export default function Home() {
         <div className="container flex h-14 items-center justify-between">
           <div className="mr-4 flex items-center">
             <Landmark className="h-6 w-6 text-primary" />
-            <span className="ml-2 font-bold font-headline">NIK Check</span>
+            <span className="ml-2 font-bold font-headline">NIK & Zodiac Check</span>
           </div>
           <nav>
             <Button asChild variant="outline">
               <Link href="/zodiac">
                 <Sparkles className="mr-2 h-4 w-4" />
-                Zodiac & Shio
+                Zodiac by Date
               </Link>
             </Button>
           </nav>

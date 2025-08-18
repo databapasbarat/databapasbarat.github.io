@@ -9,11 +9,11 @@ export default function ZodiacPage() {
         <div className="container flex h-14 items-center justify-between">
            <Link href="/" className="mr-4 flex items-center">
             <Landmark className="h-6 w-6 text-primary" />
-            <span className="ml-2 font-bold font-headline">NIK Check</span>
+            <span className="ml-2 font-bold font-headline">NIK & Zodiac Check</span>
           </Link>
           <div className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
-            <span className="font-bold font-headline">Zodiac & Shio</span>
+            <span className="font-bold font-headline">Zodiac by Date</span>
           </div>
         </div>
       </header>
