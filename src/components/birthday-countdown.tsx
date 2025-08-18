@@ -64,38 +64,33 @@ export function BirthdayCountdown({ birthDateString }: BirthdayCountdownProps) {
             const totalSeconds = Math.floor(distance / 1000);
             const totalMinutes = Math.floor(totalSeconds / 60);
             const totalHours = Math.floor(totalMinutes / 60);
-            const daysLeft = Math.floor(totalHours / 24);
-
+            
             const seconds = totalSeconds % 60;
             const minutes = totalMinutes % 60;
             const hours = totalHours % 24;
-            
-            // Approximate months and remaining days
-            let tempDate = new Date(now);
+
+            // More reliable month and day calculation
+            let tempNow = new Date(now);
             let monthsLeft = 0;
-            while (tempDate < nextBirthday) {
-                let lastDayOfMonth = new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 0).getDate();
-                if (tempDate.getDate() + daysLeft > lastDayOfMonth) {
+            
+            // Calculate full months left
+            while(true) {
+                let tempNextMonth = new Date(tempNow);
+                tempNextMonth.setMonth(tempNextMonth.getMonth() + 1);
+                if (tempNextMonth <= nextBirthday) {
                     monthsLeft++;
-                    tempDate.setMonth(tempDate.getMonth() + 1);
+                    tempNow.setMonth(tempNow.getMonth() + 1);
                 } else {
                     break;
                 }
             }
             
-            let daysInMonth = 0;
-            if (monthsLeft > 0) {
-                let currentMonth = new Date(now);
-                for(let i=0; i < monthsLeft; i++) {
-                     daysInMonth += new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-                     currentMonth.setMonth(currentMonth.getMonth() + 1);
-                }
-            }
-            
-            const remainingDays = daysLeft - daysInMonth;
+            // Calculate remaining days after subtracting full months
+            const daysDistance = nextBirthday.getTime() - tempNow.getTime();
+            const daysLeft = Math.floor(daysDistance / (1000 * 60 * 60 * 24));
 
 
-            setTimeLeft({ months: monthsLeft, days: remainingDays, hours, minutes, seconds });
+            setTimeLeft({ months: monthsLeft, days: daysLeft, hours, minutes, seconds });
 
         }, 1000);
 
