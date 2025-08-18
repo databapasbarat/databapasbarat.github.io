@@ -52,7 +52,6 @@ interface NikData {
         nama: string;
         tempat_lahir: string;
         zodiak: string;
-        shio: string;
         ultah_mendatang: string;
         kelamin: string;
         usia: string;
@@ -178,8 +177,7 @@ export function NikCheckClient() {
         zodiacData?.analysis?.description &&
         nameMeaningData?.arti &&
         nikData?.data?.kelamin &&
-        nikData?.data?.usia &&
-        nikData?.data?.shio;
+        nikData?.data?.usia;
 
     if (canGenerateImage) {
       const fetchImage = async () => {
@@ -199,7 +197,6 @@ export function NikCheckClient() {
               nameMeaning: nameMeaningData.arti,
               gender: nikData.data.kelamin,
               age: nikData.data.usia,
-              shio: nikData.data.shio,
             }),
           });
           const result = await response.json();
@@ -279,7 +276,7 @@ export function NikCheckClient() {
   };
 
   const ktpKeys = [
-    'nik', 'nama', 'kelamin', 'tempat_lahir', 'usia', 'zodiak', 'shio', 'provinsi', 
+    'nik', 'nama', 'kelamin', 'tempat_lahir', 'usia', 'zodiak', 'provinsi', 
     'kabupaten', 'kecamatan', 'kelurahan'
   ];
 
