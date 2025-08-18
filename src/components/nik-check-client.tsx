@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck, Cake, BookText } from "lucide-react";
+import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, Cake, BookText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -84,12 +84,10 @@ export function NikCheckClient() {
   const [zodiacData, setZodiacData] = useState<ZodiacData | null>(null);
   const [nameMeaningData, setNameMeaningData] = useState<NameMeaningData | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [ektpImage, setEktpImage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
   const [isCheckingNameMeaning, setIsCheckingNameMeaning] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [isGeneratingEktp, setIsGeneratingEktp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [zodiacError, setZodiacError] = useState<string | null>(null);
   const [nameMeaningError, setNameMeaningError] = useState<string | null>(null);
@@ -99,33 +97,6 @@ export function NikCheckClient() {
     defaultValues: { nik: "" },
   });
   
-  useEffect(() => {
-    if (generatedImage && nikData) {
-      const fetchEktpImage = async () => {
-        setIsGeneratingEktp(true);
-        setEktpImage(null);
-        setError(null);
-        try {
-          const response = await fetch('/api/generate-ektp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nikData, pas_photo_url: generatedImage }),
-          });
-          const result = await response.json();
-          if (!response.ok) {
-            throw new Error(result.error || "Failed to generate e-KTP image.");
-          }
-          setEktpImage(result.imageUrl);
-        } catch (e: any) {
-          console.error("e-KTP image generation failed:", e);
-           setError(`e-KTP Generation Failed: ${e.message}`);
-        } finally {
-          setIsGeneratingEktp(false);
-        }
-      };
-      fetchEktpImage();
-    }
-  }, [generatedImage, nikData]);
 
   useEffect(() => {
     if (zodiacData && nikData) {
@@ -208,7 +179,6 @@ export function NikCheckClient() {
     setIsCheckingZodiac(false);
     setIsCheckingNameMeaning(false);
     setIsGeneratingImage(false);
-    setIsGeneratingEktp(false);
     setError(null);
     setZodiacError(null);
     setNameMeaningError(null);
@@ -216,7 +186,6 @@ export function NikCheckClient() {
     setZodiacData(null);
     setNameMeaningData(null);
     setGeneratedImage(null);
-    setEktpImage(null);
 
     try {
       const response = await fetch(`/api/check-nik?nik=${values.nik}`);
@@ -384,24 +353,6 @@ export function NikCheckClient() {
 
                 <Card>
                     <CardHeader className="flex flex-row items-center gap-2">
-                        <BadgeCheck className="h-5 w-5 text-primary"/>
-                        <CardTitle className="font-headline">e-KTP Digital</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {isGeneratingEktp ? (
-                            <Skeleton className="w-full aspect-[85.6/53.98] rounded-md" />
-                        ) : ektpImage ? (
-                             <Image src={ektpImage} alt="Generated e-KTP" width={856} height={540} className="w-full rounded-md" data-ai-hint="id card" />
-                        ) : (
-                             <div className="w-full aspect-[85.6/53.98] rounded-md bg-muted flex items-center justify-center">
-                                <p className="text-sm text-muted-foreground text-center p-4">e-KTP akan dibuat setelah gambar representasi AI berhasil dimuat.</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardHeader className="flex flex-row items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary"/>
                         <CardTitle className="font-headline">Zodiak</CardTitle>
                     </CardHeader>
@@ -417,7 +368,7 @@ export function NikCheckClient() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold">Zodiak</h3>
-                                    <p className="text-muted-foreground">{zodiacData.zodiac}</p>
+                                    <p className="text-muted-foreground">{zodiacData.zodiak}</p>
                                 </div>
                                 <div>
                                     <h3 className="font-semibold">Analisis Kepribadian AI</h3>
