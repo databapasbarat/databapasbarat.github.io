@@ -54,10 +54,6 @@ interface NikData {
         };
         [key: string]: any;
     };
-    metadata: {
-        [key: string]: any;
-    };
-    data_lhp: Record<string, any>[];
 }
 
 interface ApiResponse {
@@ -66,8 +62,6 @@ interface ApiResponse {
     nik: string;
     status: string;
     data: NikData["data"];
-    metadata: NikData["metadata"];
-    data_lhp: NikData["data_lhp"];
   };
   message?: string;
 }
@@ -202,8 +196,6 @@ export function NikCheckClient() {
       const extractedData: NikData = {
           nik: result.data.nik,
           data: result.data.data,
-          metadata: result.data.metadata,
-          data_lhp: result.data.data_lhp,
       };
 
       setNikData(extractedData);
@@ -247,7 +239,7 @@ export function NikCheckClient() {
 
   const ktpKeys = [
     'nik', 'nama', 'kelamin', 'tempat_lahir', 'usia', 'provinsi', 
-    'kabupaten', 'kecamatan', 'kelurahan', 'alamat', 'tps'
+    'kabupaten', 'kecamatan', 'kelurahan'
   ];
 
   return (

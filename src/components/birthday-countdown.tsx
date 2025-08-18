@@ -10,15 +10,22 @@ const AnimatedCounter = ({ value, label }: { value: number; label: string }) => 
   const [currentValue, setCurrentValue] = useState(0);
 
   useEffect(() => {
-    const animationDuration = 1000; // 1 second
+    // No animation if the value is 0
+    if (value === 0) {
+      setCurrentValue(0);
+      return;
+    }
+    
+    const animationDuration = 1500; // 1.5 seconds for a smoother feel
     const frameDuration = 1000 / 60; // 60 fps
-    const totalFrames = animationDuration / frameDuration;
+    const totalFrames = Math.round(animationDuration / frameDuration);
     let frame = 0;
 
     const counter = setInterval(() => {
       frame++;
       const progress = frame / totalFrames;
-      const easedProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      // easeOutExpo easing function for a more dramatic effect
+      const easedProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       const animatedValue = Math.round(value * easedProgress);
       
       setCurrentValue(animatedValue);
