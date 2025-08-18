@@ -50,6 +50,8 @@ interface NikData {
         tempat_lahir: string;
         zodiak: string;
         ultah_mendatang: string;
+        kelamin: string;
+        usia: string;
         koordinat?: {
             lat: string;
             lon: string;
@@ -103,45 +105,44 @@ export function NikCheckClient() {
 
       setIsCheckingZodiac(true);
       setZodiacError(null);
-      setError(null);
-
-      // Fetch Zodiac Data
-      if (nikData.data.zodiak) {
-        try {
-          const personalityResult = await getZodiacSign({ name: nikData.data.nama, zodiac: nikData.data.zodiak });
-          setZodiacData({
-            zodiac: nikData.data.zodiak,
-            personality: personalityResult.personality,
-          });
-        } catch (e: any) {
-          console.error("Zodiac check failed:", e);
-          setZodiacError(e.message || "Gagal memuat data zodiak.");
-          setZodiacData(null);
-        } finally {
-          setIsCheckingZodiac(false);
-        }
-      } else {
-        setZodiacError("Zodiak tidak tersedia dari data NIK.");
-        setIsCheckingZodiac(false);
-      }
-      
-      // Fetch Name Meaning Data
       setIsCheckingNameMeaning(true);
       setNameMeaningError(null);
-      if (nikData.data.nama) {
-        try {
-          const result = await getNameMeaning({ name: nikData.data.nama });
-          setNameMeaningData(result);
-        } catch (e: any) {
-          console.error("Name meaning check failed:", e);
-          setNameMeaningError(e.message || "Gagal memuat data arti nama.");
-          setNameMeaningData(null);
-        } finally {
-          setIsCheckingNameMeaning(false);
-        }
+
+      const zodiacPromise = getZodiacSign({
+        name: nikData.data.nama,
+        zodiac: nikData.data.zodiak,
+        gender: nikData.data.kelamin,
+        age: nikData.data.usia
+      }).catch(e => {
+        console.error("Zodiac check failed:", e);
+        setZodiacError(e.message || "Gagal memuat data zodiak.");
+        return null;
+      });
+
+      const nameMeaningPromise = getNameMeaning({ name: nikData.data.nama }).catch(e => {
+        console.error("Name meaning check failed:", e);
+        setNameMeaningError(e.message || "Gagal memuat data arti nama.");
+        return null;
+      });
+
+      const [zodiacResult, nameMeaningResult] = await Promise.all([zodiacPromise, nameMeaningPromise]);
+
+      if (zodiacResult) {
+        setZodiacData({
+          zodiac: nikData.data.zodiak,
+          personality: zodiacResult.personality,
+        });
       } else {
-        setIsCheckingNameMeaning(false);
+        setZodiacData(null);
       }
+      setIsCheckingZodiac(false);
+
+      if (nameMeaningResult) {
+        setNameMeaningData(nameMeaningResult);
+      } else {
+        setNameMeaningData(null);
+      }
+      setIsCheckingNameMeaning(false);
     };
     
     fetchAuxData();
@@ -164,6 +165,8 @@ export function NikCheckClient() {
               zodiac: zodiacData.zodiac,
               zodiacDescription: zodiacData.personality,
               nameMeaning: nameMeaningData.arti,
+              gender: nikData.data.kelamin,
+              age: nikData.data.usia,
             }),
           });
           const result = await response.json();
