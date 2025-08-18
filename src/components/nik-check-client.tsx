@@ -90,7 +90,7 @@ export function NikCheckClient() {
   });
   
   useEffect(() => {
-    if (nikData) {
+    if (generatedImage && nikData) {
       const fetchEktpImage = async () => {
         setIsGeneratingEktp(true);
         setEktpImage(null);
@@ -98,22 +98,23 @@ export function NikCheckClient() {
           const response = await fetch('/api/generate-ektp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nikData }),
+            body: JSON.stringify({ nikData, pas_photo_url: generatedImage }),
           });
           const result = await response.json();
           if (!response.ok) {
             throw new Error(result.error || "Failed to generate e-KTP image.");
           }
           setEktpImage(result.imageUrl);
-        } catch (e) {
+        } catch (e: any) {
           console.error("e-KTP image generation failed:", e);
+           setError(`e-KTP Generation Failed: ${e.message}`);
         } finally {
           setIsGeneratingEktp(false);
         }
       };
       fetchEktpImage();
     }
-  }, [nikData]);
+  }, [generatedImage, nikData]);
 
   useEffect(() => {
     if (zodiacData && nikData) {
@@ -357,7 +358,7 @@ export function NikCheckClient() {
                              <Image src={ektpImage} alt="Generated e-KTP" width={856} height={540} className="w-full rounded-md" data-ai-hint="id card" />
                         ) : (
                              <div className="w-full aspect-[85.6/53.98] rounded-md bg-muted flex items-center justify-center">
-                                <p className="text-sm text-muted-foreground text-center p-4">e-KTP akan dibuat setelah data NIK berhasil dimuat.</p>
+                                <p className="text-sm text-muted-foreground text-center p-4">e-KTP akan dibuat setelah gambar representasi AI berhasil dimuat.</p>
                             </div>
                         )}
                     </CardContent>

@@ -4,16 +4,13 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nikData } = body;
+    const { nikData, pas_photo_url } = body;
 
-    if (!nikData) {
-      return NextResponse.json({ error: 'NIK data is required.' }, { status: 400 });
+    if (!nikData || !pas_photo_url) {
+      return NextResponse.json({ error: 'NIK data and photo URL are required.' }, { status: 400 });
     }
 
-    // Use a placeholder image as the pas_photo
-    const pas_photo_url = 'https://placehold.co/300x400.png';
-    
-    // Construct the query parameters from nikData, providing empty strings as fallbacks
+    // Construct the query parameters from nikData, providing defaults as specified
     const params = new URLSearchParams({
         provinsi: nikData.data.provinsi || '',
         kota: nikData.data.kabupaten || nikData.data.kota || '',
@@ -21,14 +18,14 @@ export async function POST(request: Request) {
         nama: nikData.data.nama || '',
         ttl: nikData.data.tempat_lahir || '',
         jenis_kelamin: nikData.data.kelamin || '',
-        golongan_darah: nikData.data.gol_darah || '-',
+        golongan_darah: '-',
         alamat: nikData.data.alamat || '',
         'rt/rw': nikData.data.rt_rw || '-',
         'kel/desa': nikData.data.kelurahan || '',
         kecamatan: nikData.data.kecamatan || '',
-        agama: nikData.data.agama || '-',
-        status: nikData.data.status_perkawinan || '-',
-        pekerjaan: nikData.data.pekerjaan || '-',
+        agama: '-',
+        status: '-',
+        pekerjaan: '-',
         kewarganegaraan: 'WNI',
         masa_berlaku: 'SEUMUR HIDUP',
         terbuat: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'),
@@ -43,12 +40,17 @@ export async function POST(request: Request) {
     if (!ektpResponse.ok) {
         const errorText = await ektpResponse.text();
         console.error("e-KTP API error:", errorText);
-        throw new Error('Failed to generate e-KTP image from external API.');
+        // If the content type is not an image, it's likely a JSON/text error from the API
+        if (ektpResponse.headers.get('content-type')?.includes('image')) {
+            throw new Error('Failed to generate e-KTP image from external API.');
+        } else {
+             throw new Error(`e-KTP API error: ${errorText}`);
+        }
     }
     
     const contentType = ektpResponse.headers.get('content-type');
     
-    // If the content type is not an image, it's likely an error message from the API
+    // Double check if the content type is not an image
     if (contentType && !contentType.startsWith('image/')) {
         const errorText = await ektpResponse.text();
         console.error("e-KTP API returned a non-image response:", errorText);
