@@ -97,6 +97,55 @@ export function NikCheckClient() {
     defaultValues: { nik: "" },
   });
   
+  useEffect(() => {
+    const fetchAuxData = async () => {
+      if (!nikData) return;
+
+      setIsCheckingZodiac(true);
+      setZodiacError(null);
+      setError(null);
+
+      // Fetch Zodiac Data
+      if (nikData.data.zodiak) {
+        try {
+          const personalityResult = await getZodiacSign({ name: nikData.data.nama, zodiac: nikData.data.zodiak });
+          setZodiacData({
+            zodiac: nikData.data.zodiak,
+            personality: personalityResult.personality,
+          });
+        } catch (e: any) {
+          console.error("Zodiac check failed:", e);
+          setZodiacError(e.message || "Gagal memuat data zodiak.");
+          setZodiacData(null);
+        } finally {
+          setIsCheckingZodiac(false);
+        }
+      } else {
+        setZodiacError("Zodiak tidak tersedia dari data NIK.");
+        setIsCheckingZodiac(false);
+      }
+      
+      // Fetch Name Meaning Data
+      setIsCheckingNameMeaning(true);
+      setNameMeaningError(null);
+      if (nikData.data.nama) {
+        try {
+          const result = await getNameMeaning({ name: nikData.data.nama });
+          setNameMeaningData(result);
+        } catch (e: any) {
+          console.error("Name meaning check failed:", e);
+          setNameMeaningError(e.message || "Gagal memuat data arti nama.");
+          setNameMeaningData(null);
+        } finally {
+          setIsCheckingNameMeaning(false);
+        }
+      } else {
+        setIsCheckingNameMeaning(false);
+      }
+    };
+    
+    fetchAuxData();
+  }, [nikData]);
 
   useEffect(() => {
     if (zodiacData && nikData && nameMeaningData) {
@@ -133,54 +182,10 @@ export function NikCheckClient() {
       fetchImage();
     }
   }, [zodiacData, nikData, nameMeaningData]);
-
-  const fetchNameMeaningData = async (name: string) => {
-    setIsCheckingNameMeaning(true);
-    setNameMeaningError(null);
-    try {
-        const result = await getNameMeaning({ name });
-        setNameMeaningData(result);
-    } catch (e: any) {
-        console.error("Name meaning check failed:", e);
-        setNameMeaningError(e.message || "Gagal memuat data arti nama.");
-        setNameMeaningData(null);
-    } finally {
-        setIsCheckingNameMeaning(false);
-    }
-  };
-
-
-  const fetchZodiacData = async (name: string, zodiac: string) => {
-      setIsCheckingZodiac(true);
-      setZodiacError(null);
-      setError(null);
-      try {
-          if (!zodiac) {
-            setZodiacError("Zodiak tidak tersedia dari data NIK.");
-            setIsCheckingZodiac(false);
-            return;
-          }
-
-          const personalityResult = await getZodiacSign({ name: name, zodiac });
-          setZodiacData({
-              zodiac,
-              personality: personalityResult.personality,
-          });
-
-      } catch (e: any) {
-          console.error("Zodiac check failed:", e);
-          setZodiacError(e.message || "Gagal memuat data zodiak.");
-          setZodiacData(null);
-      } finally {
-          setIsCheckingZodiac(false);
-      }
-  };
+  
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsChecking(true);
-    setIsCheckingZodiac(false);
-    setIsCheckingNameMeaning(false);
-    setIsGeneratingImage(false);
     setError(null);
     setZodiacError(null);
     setNameMeaningError(null);
@@ -204,19 +209,9 @@ export function NikCheckClient() {
 
       setNikData(extractedData);
       
-      if (extractedData.data.nama) {
-        fetchNameMeaningData(extractedData.data.nama);
-      }
-      
-      if (extractedData.data.zodiak) {
-        fetchZodiacData(extractedData.data.nama, extractedData.data.zodiak);
-      } else {
-        setIsCheckingZodiac(false);
-        setZodiacError("Zodiak tidak tersedia dari data NIK.");
-      }
-
     } catch (err: any) {
       setError(err.message || "Gagal mengambil data dari API!");
+      setNikData(null);
     } finally {
       setIsChecking(false);
     }
