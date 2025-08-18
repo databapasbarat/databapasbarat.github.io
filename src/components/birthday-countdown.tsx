@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 
 // Helper untuk mem-parsing tanggal lahir dalam format Indonesia.
-// Contoh input: "Bandung, 15 Mei 1990" atau "15 Mei 1990"
 const parseIndonesianDate = (dateString: string): Date | null => {
     const datePart = dateString.includes(',') ? dateString.split(',')[1].trim() : dateString.trim();
     const parts = datePart.split(' ');
@@ -20,20 +19,21 @@ const parseIndonesianDate = (dateString: string): Date | null => {
     return new Date(year, monthIndex, day);
 };
 
-// Komponen untuk menampilkan satu blok waktu (misal: "12" dan "Hari")
+// Komponen untuk menampilkan satu blok waktu
 const TimeBlock = ({ value, label }: { value: number; label: string }) => (
   <div className="flex flex-col items-center">
-    <div className="flex justify-center items-center w-20 h-20 sm:w-24 sm:h-24 bg-secondary rounded-lg shadow-inner">
-      <span className="text-4xl sm:text-5xl font-bold text-primary tracking-tight">
+    <div className="flex justify-center items-center w-16 h-16 sm:w-20 sm:h-20 bg-secondary rounded-lg shadow-inner">
+      <span className="text-3xl sm:text-4xl font-bold text-primary tracking-tight">
         {String(value).padStart(2, '0')}
       </span>
     </div>
-    <span className="mt-2 text-sm sm:text-base font-medium text-muted-foreground">{label}</span>
+    <span className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground">{label}</span>
   </div>
 );
 
 export function BirthdayCountdown({ birthDateString }: { birthDateString: string }) {
     const [timeLeft, setTimeLeft] = useState({
+        months: 0,
         days: 0,
         hours: 0,
         minutes: 0,
@@ -50,7 +50,6 @@ export function BirthdayCountdown({ birthDateString }: { birthDateString: string
             const now = new Date();
             let nextBirthday = new Date(now.getFullYear(), birthDate.getMonth(), birthDate.getDate());
 
-            // Jika ulang tahun tahun ini sudah lewat, hitung untuk tahun depan
             if (now > nextBirthday) {
                 nextBirthday.setFullYear(now.getFullYear() + 1);
             }
@@ -58,37 +57,53 @@ export function BirthdayCountdown({ birthDateString }: { birthDateString: string
             const distance = nextBirthday.getTime() - now.getTime();
 
             if (distance < 0) {
-                 setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+                 setTimeLeft({ months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
                  return;
             }
 
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            let tempDate = new Date(now.getTime());
+            let months = 0;
+            while(tempDate < nextBirthday) {
+              tempDate.setMonth(tempDate.getMonth() + 1);
+              if(tempDate <= nextBirthday) {
+                months++;
+              }
+            }
+            tempDate.setMonth(tempDate.getMonth() - 1);
+            if (months > 0) {
+              months--;
+            }
+
+
+            let runningDate = new Date(now.getTime());
+            runningDate.setMonth(runningDate.getMonth() + months);
+
+
+            const days = Math.floor((nextBirthday.getTime() - runningDate.getTime()) / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            setTimeLeft({ days, hours, minutes, seconds });
+            setTimeLeft({ months, days, hours, minutes, seconds });
 
         }, 1000);
 
-        // Membersihkan interval saat komponen di-unmount
         return () => clearInterval(timer);
     }, [birthDateString]);
 
-    // Menampilkan placeholder saat komponen pertama kali render di server
     if (!isMounted) {
       return (
         <div className="flex items-center justify-center space-x-2 sm:space-x-4">
-          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
-          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
-          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
-          <div className="w-24 h-24 bg-secondary rounded-lg"></div>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-20 h-20 bg-secondary rounded-lg"></div>
+          ))}
         </div>
       );
     }
 
     return (
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <TimeBlock value={timeLeft.months} label="Bulan" />
             <TimeBlock value={timeLeft.days} label="Hari" />
             <TimeBlock value={timeLeft.hours} label="Jam" />
             <TimeBlock value={timeLeft.minutes} label="Menit" />
