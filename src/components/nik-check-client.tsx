@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, User, Calendar } from "lucide-react";
+import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, User, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,15 +69,51 @@ export function NikCheckClient() {
   const [nikData, setNikData] = useState<NikData | null>(null);
   const [zodiacData, setZodiacData] = useState<ZodiacData | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { nik: "" },
   });
+  
+  useEffect(() => {
+    if (zodiacData && summary && nikData) {
+      const fetchImage = async () => {
+        setIsGeneratingImage(true);
+        try {
+          const response = await fetch('/api/generate-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: nikData.data.nama_lengkap,
+              zodiac: zodiacData.zodiac,
+              shio: zodiacData.shio,
+              summary: summary,
+            }),
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || "Failed to generate image.");
+          }
+          setGeneratedImage(result.imageUrl);
+        } catch (e) {
+          console.error("Image generation failed:", e);
+          setGeneratedImage(null);
+        } finally {
+          setIsGeneratingImage(false);
+        }
+      };
+      fetchImage();
+    }
+  }, [zodiacData, summary, nikData]);
+
 
   const fetchZodiacData = async (name: string, birthdate: string) => {
       setIsCheckingZodiac(true);
@@ -108,10 +145,12 @@ export function NikCheckClient() {
     setIsChecking(true);
     setIsSummarizing(false);
     setIsCheckingZodiac(false);
+    setIsGeneratingImage(false);
     setError(null);
     setNikData(null);
     setSummary(null);
     setZodiacData(null);
+    setGeneratedImage(null);
 
     try {
       const response = await fetch(`/api/check-nik?nik=${values.nik}`);
@@ -165,7 +204,7 @@ export function NikCheckClient() {
         <CardHeader>
           <CardTitle className="font-headline">Cek Data NIK e-KTP</CardTitle>
           <CardDescription>
-            Masukkan 16 digit Nomor Induk Kependudukan (NIK) Anda untuk melihat data kependudukan, zodiak, dan shio Anda.
+            Masukkan 16 digit Nomor Induk Kependudukan (NIK) Anda untuk melihat data kependudukan, zodiak, shio, dan representasi gambar AI Anda.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -242,87 +281,106 @@ export function NikCheckClient() {
       )}
 
       {nikData && (
-        <div className="space-y-8">
-            <Card>
+        <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-8">
+                <Card>
+                    <CardHeader className="flex flex-row items-center gap-2">
+                        <Camera className="h-5 w-5 text-primary"/>
+                        <CardTitle className="font-headline">Gambar Representasi AI</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isGeneratingImage ? (
+                            <Skeleton className="w-full aspect-square rounded-md" />
+                        ) : generatedImage ? (
+                            <Image src={generatedImage} alt="Generated Persona" width={512} height={512} className="w-full rounded-md" data-ai-hint="futuristic modern" />
+                        ) : (
+                            <p className="text-sm text-muted-foreground">Gagal membuat gambar atau sedang menunggu data lain.</p>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary"/>
+                        <CardTitle className="font-headline">Ringkasan AI</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isSummarizing ? (
+                             <div className="space-y-2">
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-4/5" />
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">{summary}</p>
+                        )}
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader className="flex flex-row items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary"/>
+                        <CardTitle className="font-headline">Zodiak & Shio</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isCheckingZodiac ? (
+                            <div className="space-y-4">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-4 w-full mt-4" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
+                            </div>
+                        ) : zodiacData ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="font-semibold">Zodiak</h3>
+                                    <p className="text-muted-foreground">{zodiacData.zodiac}</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold">Shio</h3>
+                                    <p className="text-muted-foreground">{zodiacData.shio}</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold">Analisis Kepribadian AI</h3>
+                                    <p className="text-muted-foreground">{zodiacData.personality}</p>
+                                </div>
+                            </div>
+                        ) : (
+                             <p className="text-sm text-muted-foreground">Gagal memuat data zodiak.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="space-y-8">
+              <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary"/>
-                    <CardTitle className="font-headline">Ringkasan AI</CardTitle>
+                  <Files className="h-5 w-5 text-primary" />
+                  <CardTitle className="font-headline">Detail KTP</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    {isSummarizing ? (
-                         <div className="space-y-2">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-4/5" />
-                        </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">{summary}</p>
-                    )}
+                <CardContent className="px-0 sm:px-6">
+                  {renderTable({ nik: nikData.nik, ...nikData.data })}
                 </CardContent>
-            </Card>
-            
-            <Card>
+              </Card>
+
+              <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary"/>
-                    <CardTitle className="font-headline">Zodiak & Shio</CardTitle>
+                  <Database className="h-5 w-5 text-primary" />
+                  <CardTitle className="font-headline">Metadata</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    {isCheckingZodiac ? (
-                        <div className="space-y-4">
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-4 w-full mt-4" />
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-2/3" />
-                        </div>
-                    ) : zodiacData ? (
-                        <div className="space-y-4">
-                            <div>
-                                <h3 className="font-semibold">Zodiak</h3>
-                                <p className="text-muted-foreground">{zodiacData.zodiac}</p>
-                            </div>
-                            <div>
-                                <h3 className="font-semibold">Shio</h3>
-                                <p className="text-muted-foreground">{zodiacData.shio}</p>
-                            </div>
-                            <div>
-                                <h3 className="font-semibold">Analisis Kepribadian AI</h3>
-                                <p className="text-muted-foreground">{zodiacData.personality}</p>
-                            </div>
-                        </div>
-                    ) : (
-                         <p className="text-sm text-muted-foreground">Gagal memuat data zodiak.</p>
-                    )}
-                </CardContent>
-            </Card>
+                <CardContent className="px-0 sm:px-6">{renderTable(nikData.metadata)}</CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center gap-2">
-              <Files className="h-5 w-5 text-primary" />
-              <CardTitle className="font-headline">Detail KTP</CardTitle>
-            </CardHeader>
-            <CardContent className="px-0 sm:px-6">
-              {renderTable({ nik: nikData.nik, ...nikData.data })}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center gap-2">
-              <Database className="h-5 w-5 text-primary" />
-              <CardTitle className="font-headline">Metadata</CardTitle>
-            </CardHeader>
-            <CardContent className="px-0 sm:px-6">{renderTable(nikData.metadata)}</CardContent>
-          </Card>
-
-          {nikData.data_lhp && nikData.data_lhp.length > 0 && (
-            <Card>
-              <CardHeader className="flex flex-row items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <CardTitle className="font-headline">Data LHP</CardTitle>
-              </CardHeader>
-              <CardContent className="px-0 sm:px-6">{renderTable(nikData.data_lhp[0])}</CardContent>
-            </Card>
-          )}
+              {nikData.data_lhp && nikData.data_lhp.length > 0 && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <CardTitle className="font-headline">Data LHP</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-0 sm:px-6">{renderTable(nikData.data_lhp[0])}</CardContent>
+                </Card>
+              )}
+            </div>
         </div>
       )}
     </div>
