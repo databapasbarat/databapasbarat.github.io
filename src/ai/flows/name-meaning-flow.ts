@@ -29,14 +29,15 @@ const getNameMeaningTool = ai.defineTool(
       name: 'getNameMeaning',
       description: 'Get the meaning of a name from the primbon.',
       inputSchema: z.object({
-        name: z.string().describe("The person's first name."),
+        name: z.string().describe("The person's full name."),
       }),
       outputSchema: z.any(),
     },
     async (input) => {
-      // Use only the first name for the API call
-      const firstName = input.name.split(' ')[0];
-      const url = `https://api.siputzx.my.id/api/primbon/artinama?nama=${firstName.toLowerCase()}`;
+      // Use the full name for the API call, replacing spaces with a character the API might handle, or just URL encode it.
+      // The API seems to handle single names better, but we will try with the full name.
+      const nameForApi = input.name.toLowerCase();
+      const url = `https://api.siputzx.my.id/api/primbon/artinama?nama=${encodeURIComponent(nameForApi)}`;
       try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -44,10 +45,21 @@ const getNameMeaningTool = ai.defineTool(
         }
         const data = await response.json();
         if(data.status === false){
-          return {
-            nama: input.name,
-            arti: `Tidak ditemukan arti untuk nama ${input.name}.`,
-          }
+          // Try with just the first name if the full name fails
+          const firstName = input.name.split(' ')[0].toLowerCase();
+          const fallbackUrl = `https://api.siputzx.my.id/api/primbon/artinama?nama=${firstName}`;
+          const fallbackResponse = await fetch(fallbackUrl);
+           if (!fallbackResponse.ok) {
+              throw new Error(`Failed to fetch name meaning for ${input.name}`);
+           }
+           const fallbackData = await fallbackResponse.json();
+            if(fallbackData.status === false){
+                 return {
+                    nama: input.name,
+                    arti: `Tidak ditemukan arti untuk nama ${input.name}.`,
+                  }
+            }
+           return fallbackData.data;
         }
         return data.data;
       } catch (error) {
