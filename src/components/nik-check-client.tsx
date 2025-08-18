@@ -95,6 +95,7 @@ export function NikCheckClient() {
       const fetchEktpImage = async () => {
         setIsGeneratingEktp(true);
         setEktpImage(null);
+        setError(null);
         try {
           const response = await fetch('/api/generate-ektp', {
             method: 'POST',
@@ -122,6 +123,7 @@ export function NikCheckClient() {
       const fetchImage = async () => {
         setIsGeneratingImage(true);
         setGeneratedImage(null);
+        setError(null);
         try {
           const response = await fetch('/api/generate-image', {
             method: 'POST',
@@ -138,8 +140,9 @@ export function NikCheckClient() {
             throw new Error(result.error || "Failed to generate image.");
           }
           setGeneratedImage(result.imageUrl);
-        } catch (e) {
+        } catch (e: any) {
           console.error("Image generation failed:", e);
+          setError(`Image Generation Failed: ${e.message}`);
           setGeneratedImage(null);
         } finally {
           setIsGeneratingImage(false);
@@ -153,6 +156,7 @@ export function NikCheckClient() {
   const fetchZodiacData = async (name: string, zodiac: string) => {
       setIsCheckingZodiac(true);
       setZodiacError(null);
+      setError(null);
       try {
           if (!zodiac) {
             setZodiacError("Zodiak tidak tersedia dari data NIK.");

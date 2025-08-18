@@ -10,17 +10,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'NIK data and photo URL are required.' }, { status: 400 });
     }
 
-    // Construct the query parameters from nikData, providing defaults as specified
-    const params = new URLSearchParams({
+    const ektpApiUrl = `https://api.siputzx.my.id/api/m/ektp`;
+
+    const requestBody = {
         provinsi: nikData.data.provinsi || '',
         kota: nikData.data.kabupaten || nikData.data.kota || '',
         nik: nikData.nik || '',
         nama: nikData.data.nama || '',
-        ttl: nikData.data.tempat_lahir || '',
+        ttl: nikData.data.tempat_lahir ? `${nikData.data.tempat_lahir.split(',')[0]}, ${new Date(nikData.data.tempat_lahir.split(',')[1]).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}` : '',
         jenis_kelamin: nikData.data.kelamin || '',
         golongan_darah: '-',
         alamat: nikData.data.alamat || '',
-        'rt/rw': nikData.data.rt_rw || '-',
+        'rt/rw': '-',
         'kel/desa': nikData.data.kelurahan || '',
         kecamatan: nikData.data.kecamatan || '',
         agama: '-',
@@ -30,13 +31,18 @@ export async function POST(request: Request) {
         masa_berlaku: 'SEUMUR HIDUP',
         terbuat: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'),
         pas_photo: pas_photo_url
-    });
-
-    const ektpApiUrl = `https://api.siputzx.my.id/api/m/ektp?${params.toString()}`;
-
+    };
+    
     // The API returns the image directly, so we need to fetch it and return it as a data URI
-    const ektpResponse = await fetch(ektpApiUrl);
-
+    const ektpResponse = await fetch(ektpApiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'image/*'
+        },
+        body: JSON.stringify(requestBody),
+    });
+    
     if (!ektpResponse.ok) {
         const errorText = await ektpResponse.text();
         console.error("e-KTP API error:", errorText);
