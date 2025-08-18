@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck } from "lucide-react";
+import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck, Cake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getZodiacSign } from "@/ai/flows/zodiac-flow";
+import { BirthdayCountdown } from "@/components/birthday-countdown";
 
 const formSchema = z.object({
   nik: z
@@ -46,6 +47,7 @@ interface NikData {
     data: {
         nama: string;
         zodiak: string;
+        ultah_mendatang: string;
         koordinat?: {
             lat: string;
             lon: string;
@@ -220,9 +222,14 @@ export function NikCheckClient() {
     }
   }
 
-  const renderTable = (data: Record<string, any>) => {
-    // Exclude nested objects from being rendered directly in the table
-    const filteredData = Object.entries(data).filter(([_, value]) => typeof value !== 'object' || value === null);
+  const renderTable = (data: Record<string, any>, keysToShow: string[]) => {
+    const filteredData = keysToShow
+      .map(key => {
+        const value = data[key];
+        // Only include the key if it exists in the data and is not null/undefined
+        return value !== null && value !== undefined ? [key, value] : null;
+      })
+      .filter(Boolean) as [string, any][];
 
     return (
         <Table>
@@ -237,6 +244,14 @@ export function NikCheckClient() {
         </Table>
     );
   };
+
+  const ktpKeys = [
+    'nik', 'nama', 'kelamin', 'tempat_lahir', 'usia', 'provinsi', 
+    'kabupaten', 'kecamatan', 'kelurahan', 'alamat', 'tps'
+  ];
+
+  const metadataKeys = ['metode_pencarian', 'kode_wilayah', 'kategori_usia', 'jenis_wilayah', 'timestamp'];
+
 
   return (
     <div className="space-y-8">
@@ -388,6 +403,17 @@ export function NikCheckClient() {
                         )}
                     </CardContent>
                 </Card>
+                 {nikData.data.ultah_mendatang && (
+                  <Card>
+                    <CardHeader className="flex flex-row items-center gap-2">
+                      <Cake className="h-5 w-5 text-primary" />
+                      <CardTitle className="font-headline">Ulang Tahun Berikutnya</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <BirthdayCountdown countdownText={nikData.data.ultah_mendatang} />
+                    </CardContent>
+                  </Card>
+                )}
             </div>
             <div className="space-y-8">
               <Card>
@@ -396,7 +422,7 @@ export function NikCheckClient() {
                   <CardTitle className="font-headline">Detail KTP</CardTitle>
                 </CardHeader>
                 <CardContent className="px-0 sm:px-6">
-                  {renderTable({ nik: nikData.nik, ...nikData.data })}
+                  {renderTable({ ...nikData.data, nik: nikData.nik }, ktpKeys)}
                 </CardContent>
               </Card>
 
@@ -426,7 +452,7 @@ export function NikCheckClient() {
                   <Database className="h-5 w-5 text-primary" />
                   <CardTitle className="font-headline">Metadata</CardTitle>
                 </CardHeader>
-                <CardContent className="px-0 sm:px-6">{renderTable(nikData.metadata)}</CardContent>
+                <CardContent className="px-0 sm:px-6">{renderTable(nikData.metadata, metadataKeys)}</CardContent>
               </Card>
 
               {nikData.data_lhp && nikData.data_lhp.length > 0 && (
@@ -435,7 +461,7 @@ export function NikCheckClient() {
                     <FileText className="h-5 w-5 text-primary" />
                     <CardTitle className="font-headline">Data LHP</CardTitle>
                   </CardHeader>
-                  <CardContent className="px-0 sm:px-6">{renderTable(nikData.data_lhp[0])}</CardContent>
+                  <CardContent className="px-0 sm:px-6">{renderTable(nikData.data_lhp[0], Object.keys(nikData.data_lhp[0]))}</CardContent>
                 </Card>
               )}
             </div>
