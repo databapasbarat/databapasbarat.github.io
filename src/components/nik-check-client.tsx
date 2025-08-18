@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck, Cake } from "lucide-react";
+import { Loader2, Fingerprint, Files, AlertCircle, Sparkles, Camera, MapPin, BadgeCheck, Cake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -250,9 +250,6 @@ export function NikCheckClient() {
     'kabupaten', 'kecamatan', 'kelurahan', 'alamat', 'tps'
   ];
 
-  const metadataKeys = ['metode_pencarian', 'kode_wilayah', 'kategori_usia', 'jenis_wilayah', 'timestamp'];
-
-
   return (
     <div className="space-y-8">
       <Card>
@@ -444,24 +441,6 @@ export function NikCheckClient() {
                       ></iframe>
                     </div>
                   </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardHeader className="flex flex-row items-center gap-2">
-                  <Database className="h-5 w-5 text-primary" />
-                  <CardTitle className="font-headline">Metadata</CardTitle>
-                </CardHeader>
-                <CardContent className="px-0 sm:px-6">{renderTable(nikData.metadata, metadataKeys)}</CardContent>
-              </Card>
-
-              {nikData.data_lhp && nikData.data_lhp.length > 0 && (
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <CardTitle className="font-headline">Data LHP</CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-0 sm:px-6">{renderTable(nikData.data_lhp[0], Object.keys(nikData.data_lhp[0]))}</CardContent>
                 </Card>
               )}
             </div>
