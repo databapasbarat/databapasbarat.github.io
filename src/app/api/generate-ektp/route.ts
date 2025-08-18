@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 function toTitleCase(str: string) {
   if (!str) return '';
+  // This will handle "LAKI-LAKI" -> "Laki-Laki" and "PEREMPUAN" -> "Perempuan"
   return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
@@ -16,29 +17,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'NIK data and photo URL are required.' }, { status: 400 });
     }
     
-    // Format tanggal lahir, contoh: "Sukabumi, 19-09-1984"
-    const ttlParts = nikData.data.tempat_lahir?.split(', ') ?? [];
-    const placeOfBirth = ttlParts.length > 1 ? toTitleCase(ttlParts[0]) : toTitleCase(nikData.data.kabupaten || nikData.data.kota || '');
-    let dateOfBirth = '';
-    
-    if (ttlParts.length > 1) {
-        // Coba parsing tanggal dari format "DD MMMM YYYY" (Indonesian)
-        const dateString = ttlParts.slice(1).join(' ');
-        const monthNames = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
-        const dateParts = dateString.split(' ');
-        const day = parseInt(dateParts[0], 10);
-        const monthIndex = monthNames.indexOf(dateParts[1]?.toLowerCase());
-        const year = parseInt(dateParts[2], 10);
+    // The user specified that the ttl format is "Bandung, 01-01-1990"
+    // The API seems to provide "19 September 1984" in tempat_lahir
+    // We will construct the TTL based on the data we have.
 
-        if (!isNaN(day) && monthIndex !== -1 && !isNaN(year)) {
-            const formattedDay = String(day).padStart(2, '0');
-            const formattedMonth = String(monthIndex + 1).padStart(2, '0');
-            dateOfBirth = `${formattedDay}-${formattedMonth}-${year}`;
+    const placeOfBirth = toTitleCase(nikData.data.kabupaten || nikData.data.kota || '');
+    let dateOfBirth = '';
+
+    const nikDateStr = nikData.data.tempat_lahir; // "19 September 1984"
+    if (nikDateStr) {
+        const monthNames = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+        const dateParts = nikDateStr.split(' ');
+        if (dateParts.length === 3) {
+            const day = String(parseInt(dateParts[0], 10)).padStart(2, '0');
+            const monthIndex = monthNames.indexOf(dateParts[1].toLowerCase());
+            const month = String(monthIndex + 1).padStart(2, '0');
+            const year = dateParts[2];
+            if (day && monthIndex !== -1 && year) {
+                dateOfBirth = `${day}-${month}-${year}`;
+            }
         }
     }
     
     const formattedTtl = dateOfBirth ? `${placeOfBirth}, ${dateOfBirth}` : placeOfBirth;
-    const formattedKelamin = toTitleCase(nikData.data.kelamin || '');
+
+    // Sanitize jenis_kelamin to be either 'Laki-laki' or 'Perempuan'
+    let formattedKelamin = toTitleCase(nikData.data.kelamin || '');
+    if (formattedKelamin.includes('Laki')) {
+        formattedKelamin = 'Laki-laki';
+    } else if (formattedKelamin.includes('Perempuan')) {
+        formattedKelamin = 'Perempuan';
+    }
 
 
     const ektpApiUrl = `https://api.siputzx.my.id/api/m/ektp`;
@@ -49,7 +58,7 @@ export async function POST(request: Request) {
         nik: nikData.nik || '',
         nama: nikData.data.nama || '',
         ttl: formattedTtl,
-        jenis_kelamin: formattedKelamin,
+        jenis_kelamin: formattedKelamin, // Correctly formatted now
         golongan_darah: '-',
         alamat: nikData.data.alamat || '',
         'rt/rw': '-',
