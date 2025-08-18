@@ -42,8 +42,8 @@ const generateImageFlow = ai.defineFlow(
     Zodiaknya adalah ${input.zodiac}. Shio-nya adalah ${input.shio}.
     Deskripsi kepribadian berdasarkan zodiak: ${input.zodiacDescription}.
     Arti namanya adalah: ${input.nameMeaning}.
-    Gabungkan elemen kosmik, fantasi, dan simbolis yang mewakili zodiak dan arti nama mereka secara halus.
-    Sertakan juga representasi artistik dari hewan Shio (${input.shio}) sebagai roh penjaga atau elemen latar yang menyatu dengan komposisi.
+    Gabungkan elemen kosmik, fantasi, dan simbolis yang mewakili arti nama mereka.
+    Sertakan juga representasi artistik dari zodiak (${input.zodiac}) dan hewan Shio (${input.shio}) sebagai roh penjaga atau elemen latar yang menyatu dengan komposisi.
     Gaya gambar harus menyerupai lukisan digital sinematik dengan pencahayaan dramatis, detail yang kaya, dan estetika profesional yang cocok untuk avatar digital.`;
     
     const {media} = await ai.generate({
