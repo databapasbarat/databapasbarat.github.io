@@ -50,7 +50,9 @@ const TimeBlock = ({ value, label, pad }: { value: number; label: string, pad?: 
 
 // Helper function to parse date string "DD MMMM YYYY" in Indonesian
 const parseIndonesianDate = (dateString: string): Date | null => {
-    const parts = dateString.split(' ');
+    // Example input: "Bandung, 15 Mei 1990" or "15 Mei 1990"
+    const datePart = dateString.includes(',') ? dateString.split(',')[1].trim() : dateString.trim();
+    const parts = datePart.split(' ');
     if (parts.length < 3) return null;
 
     const day = parseInt(parts[0], 10);
@@ -72,8 +74,10 @@ export function BirthdayCountdown({ birthDateString }: { birthDateString: string
         minutes: 0,
         seconds: 0,
     });
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         const birthDate = parseIndonesianDate(birthDateString);
         if (!birthDate) return;
 
@@ -103,6 +107,17 @@ export function BirthdayCountdown({ birthDateString }: { birthDateString: string
 
         return () => clearInterval(timer);
     }, [birthDateString]);
+
+    if (!isMounted) {
+      return (
+        <div className="flex items-center justify-center space-x-2 sm:space-x-4 text-primary">
+          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
+          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
+          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
+          <div className="h-16 w-10 bg-secondary rounded-lg"></div>
+        </div>
+      );
+    }
     
     const showDays = timeLeft.days > 0;
 
