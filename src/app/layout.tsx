@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'NIK Check',
-  description: 'Check your e-KTP NIK data',
+  title: 'NIK & Zodiac Check',
+  description: 'Check your e-KTP NIK data and your zodiac sign',
 };
 
 export default function RootLayout({
