@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -171,7 +172,8 @@ export function NikCheckClient() {
   }, [nikData]);
 
   useEffect(() => {
-    if (zodiacData && nikData && nameMeaningData) {
+    // Ensure all required data is available and valid before generating the image
+    if (nikData?.data && zodiacData?.analysis && nameMeaningData?.arti) {
       const fetchImage = async () => {
         setIsGeneratingImage(true);
         setGeneratedImage(null);
@@ -529,3 +531,5 @@ export function NikCheckClient() {
     </div>
   );
 }
+
+    
