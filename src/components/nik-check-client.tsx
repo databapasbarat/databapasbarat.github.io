@@ -99,7 +99,7 @@ export function NikCheckClient() {
   
 
   useEffect(() => {
-    if (zodiacData && nikData) {
+    if (zodiacData && nikData && nameMeaningData) {
       const fetchImage = async () => {
         setIsGeneratingImage(true);
         setGeneratedImage(null);
@@ -113,6 +113,8 @@ export function NikCheckClient() {
             body: JSON.stringify({
               name: nikData.data.nama,
               zodiac: zodiacData.zodiac,
+              zodiacDescription: zodiacData.personality,
+              nameMeaning: nameMeaningData.arti,
             }),
           });
           const result = await response.json();
@@ -130,7 +132,7 @@ export function NikCheckClient() {
       };
       fetchImage();
     }
-  }, [zodiacData, nikData]);
+  }, [zodiacData, nikData, nameMeaningData]);
 
   const fetchNameMeaningData = async (name: string) => {
     setIsCheckingNameMeaning(true);
