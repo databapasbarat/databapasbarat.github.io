@@ -46,6 +46,7 @@ interface NikData {
     nik: string;
     data: {
         nama: string;
+        tempat_lahir: string;
         zodiak: string;
         ultah_mendatang: string;
         koordinat?: {
@@ -393,14 +394,14 @@ export function NikCheckClient() {
                         )}
                     </CardContent>
                 </Card>
-                 {nikData.data.ultah_mendatang && (
+                 {nikData.data.tempat_lahir && (
                   <Card>
                     <CardHeader className="flex flex-row items-center gap-2">
                       <Cake className="h-5 w-5 text-primary" />
                       <CardTitle className="font-headline">Ulang Tahun Berikutnya</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <BirthdayCountdown countdownText={nikData.data.ultah_mendatang} />
+                      <BirthdayCountdown birthDateString={nikData.data.tempat_lahir} />
                     </CardContent>
                   </Card>
                 )}
