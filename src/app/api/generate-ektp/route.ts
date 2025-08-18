@@ -1,6 +1,12 @@
 
 import { NextResponse } from 'next/server';
 
+function toTitleCase(str: string) {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -9,6 +15,31 @@ export async function POST(request: Request) {
     if (!nikData || !pas_photo_url) {
       return NextResponse.json({ error: 'NIK data and photo URL are required.' }, { status: 400 });
     }
+    
+    // Format tanggal lahir, contoh: "Sukabumi, 19-09-1984"
+    const ttlParts = nikData.data.tempat_lahir?.split(', ') ?? [];
+    const placeOfBirth = ttlParts.length > 1 ? toTitleCase(ttlParts[0]) : toTitleCase(nikData.data.kabupaten || nikData.data.kota || '');
+    let dateOfBirth = '';
+    
+    if (ttlParts.length > 1) {
+        // Coba parsing tanggal dari format "DD MMMM YYYY" (Indonesian)
+        const dateString = ttlParts.slice(1).join(' ');
+        const monthNames = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+        const dateParts = dateString.split(' ');
+        const day = parseInt(dateParts[0], 10);
+        const monthIndex = monthNames.indexOf(dateParts[1]?.toLowerCase());
+        const year = parseInt(dateParts[2], 10);
+
+        if (!isNaN(day) && monthIndex !== -1 && !isNaN(year)) {
+            const formattedDay = String(day).padStart(2, '0');
+            const formattedMonth = String(monthIndex + 1).padStart(2, '0');
+            dateOfBirth = `${formattedDay}-${formattedMonth}-${year}`;
+        }
+    }
+    
+    const formattedTtl = dateOfBirth ? `${placeOfBirth}, ${dateOfBirth}` : placeOfBirth;
+    const formattedKelamin = toTitleCase(nikData.data.kelamin || '');
+
 
     const ektpApiUrl = `https://api.siputzx.my.id/api/m/ektp`;
 
@@ -17,8 +48,8 @@ export async function POST(request: Request) {
         kota: nikData.data.kabupaten || nikData.data.kota || '',
         nik: nikData.nik || '',
         nama: nikData.data.nama || '',
-        ttl: nikData.data.tempat_lahir ? `${nikData.data.tempat_lahir.split(',')[0]}, ${new Date(nikData.data.tempat_lahir.split(',')[1]).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}` : '',
-        jenis_kelamin: nikData.data.kelamin || '',
+        ttl: formattedTtl,
+        jenis_kelamin: formattedKelamin,
         golongan_darah: '-',
         alamat: nikData.data.alamat || '',
         'rt/rw': '-',
@@ -43,24 +74,21 @@ export async function POST(request: Request) {
         body: JSON.stringify(requestBody),
     });
     
-    if (!ektpResponse.ok) {
-        const errorText = await ektpResponse.text();
-        console.error("e-KTP API error:", errorText);
-        // If the content type is not an image, it's likely a JSON/text error from the API
-        if (ektpResponse.headers.get('content-type')?.includes('image')) {
-            throw new Error('Failed to generate e-KTP image from external API.');
-        } else {
-             throw new Error(`e-KTP API error: ${errorText}`);
-        }
-    }
-    
     const contentType = ektpResponse.headers.get('content-type');
     
-    // Double check if the content type is not an image
-    if (contentType && !contentType.startsWith('image/')) {
+    if (!ektpResponse.ok || (contentType && !contentType.startsWith('image/'))) {
         const errorText = await ektpResponse.text();
-        console.error("e-KTP API returned a non-image response:", errorText);
-        throw new Error(`e-KTP API error: ${errorText}`);
+        console.error("e-KTP API error:", errorText);
+        let errorMessage = "Failed to generate e-KTP image from external API.";
+        try {
+            // Try to parse error as JSON
+            const errorJson = JSON.parse(errorText);
+            errorMessage = `e-KTP API error: ${errorJson.error || errorJson.message || 'Unknown error'}`;
+        } catch (e) {
+            // If parsing fails, use the raw text
+             errorMessage = `e-KTP API error: ${errorText}`;
+        }
+         return NextResponse.json({ error: errorMessage }, { status: ektpResponse.status });
     }
     
     const imageBuffer = await ektpResponse.arrayBuffer();
