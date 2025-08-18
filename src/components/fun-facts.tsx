@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { type GetFunFactsOutput } from "@/ai/flows/fun-fact-flow";
 import { Brain, Heart, Wind, Dna, Shield, Filter, Utensils, Eye, Moon, Dumbbell, Activity, BarChart3, Sparkles } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
+import { Progress } from "./ui/progress";
 
 interface FunFactsProps {
   data: GetFunFactsOutput | null;
@@ -36,7 +37,7 @@ const formatKey = (key: string) => {
 
 const formatValue = (value: number | object) => {
     if (typeof value === 'object' && value !== null) {
-        return JSON.stringify(value, null, 2); // Pretty print object
+        return JSON.stringify(value, null, 2); // Fallback for unexpected objects
     }
     if (typeof value !== 'number') {
         return String(value);
@@ -47,6 +48,61 @@ const formatValue = (value: number | object) => {
     if (value > 1e3) return `${(value / 1e3).toFixed(2)} Ribu`;
     return value.toLocaleString('id-ID');
 }
+
+const ComparisonItem = ({ title, value, total, percentage }: { title: string, value: number, total: number, percentage: number }) => (
+    <div className="space-y-2">
+      <h4 className="font-semibold text-sm">{title}</h4>
+      <div className="text-xs text-muted-foreground">
+        <p>Progres Anda: {formatValue(value)}</p>
+        <p>Rata-rata Seumur Hidup: {formatValue(total)}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Progress value={percentage} className="w-full" />
+        <span className="text-sm font-medium">{percentage}%</span>
+      </div>
+    </div>
+  );
+  
+const renderComparison = (data: any) => {
+  const items = [];
+  if (data.lifeExpectancy) {
+    items.push(
+      <div className="space-y-2" key="lifeExpectancy">
+        <h4 className="font-semibold text-sm">Harapan Hidup</h4>
+        <div className="text-xs text-muted-foreground">
+          <p>Persentase terlampaui: {data.lifeExpectancy.percentageLived}% dari rata-rata dunia {data.lifeExpectancy.world} tahun.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Progress value={data.lifeExpectancy.percentageLived} className="w-full" />
+          <span className="text-sm font-medium">{data.lifeExpectancy.percentageLived}%</span>
+        </div>
+      </div>
+    );
+  }
+  if (data.breathingProgress) {
+    items.push(
+      <ComparisonItem 
+        key="breathing"
+        title="Progres Pernapasan"
+        value={data.breathingProgress.yourProgress}
+        total={data.breathingProgress.averagePersonLifetime}
+        percentage={data.breathingProgress.percentageComplete}
+      />
+    );
+  }
+  if (data.heartbeatProgress) {
+    items.push(
+      <ComparisonItem
+        key="heartbeat"
+        title="Progres Detak Jantung"
+        value={data.heartbeatProgress.yourProgress}
+        total={data.heartbeatProgress.averagePersonLifetime}
+        percentage={data.heartbeatProgress.percentageComplete}
+      />
+    );
+  }
+  return <div className="space-y-4">{items}</div>;
+};
 
 
 export function FunFacts({ data, isLoading }: FunFactsProps) {
@@ -85,14 +141,18 @@ export function FunFacts({ data, isLoading }: FunFactsProps) {
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <ul className="space-y-2 pl-4">
-                {entries.map(([factKey, value]) => (
-                  <li key={factKey} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{formatKey(factKey)}</span>
-                    <span className="font-medium text-right">{formatValue(value as any)}</span>
-                  </li>
-                ))}
-              </ul>
+               {key === 'comparison' ? (
+                renderComparison(categoryData)
+               ) : (
+                <ul className="space-y-2 pl-4">
+                    {entries.map(([factKey, value]) => (
+                    <li key={factKey} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{formatKey(factKey)}</span>
+                        <span className="font-medium text-right">{formatValue(value as any)}</span>
+                    </li>
+                    ))}
+                </ul>
+               )}
             </AccordionContent>
           </AccordionItem>
         );
