@@ -1,13 +1,17 @@
+
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nikData, imageUrl } = body;
+    const { nikData } = body;
 
-    if (!nikData || !imageUrl) {
-      return NextResponse.json({ error: 'NIK data and image URL are required.' }, { status: 400 });
+    if (!nikData) {
+      return NextResponse.json({ error: 'NIK data is required.' }, { status: 400 });
     }
+
+    // Use a placeholder image as the pas_photo
+    const pas_photo_url = 'https://placehold.co/300x400.png';
     
     // Construct the query parameters from nikData, providing empty strings as fallbacks
     const params = new URLSearchParams({
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
         kewarganegaraan: 'WNI',
         masa_berlaku: 'SEUMUR HIDUP',
         terbuat: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'),
-        pas_photo: imageUrl
+        pas_photo: pas_photo_url
     });
 
     const ektpApiUrl = `https://api.siputzx.my.id/api/m/ektp?${params.toString()}`;
