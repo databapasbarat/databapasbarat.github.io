@@ -5,7 +5,7 @@ import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, User, Camera } from "lucide-react";
+import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle, Sparkles, User, Camera, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,7 +48,11 @@ interface NikData {
       tanggal_lahir: string;
       [key: string]: any;
   };
-  metadata: Record<string, any>;
+  metadata: {
+    lat?: string;
+    lon?: string;
+    [key: string]: any;
+  };
   data_lhp: Record<string, any>[];
 }
 
@@ -169,8 +173,13 @@ export function NikCheckClient() {
 
       setNikData(result.data);
       
-      // Fetch Zodiac Data
-      fetchZodiacData(result.data.data.nama_lengkap, result.data.data.tanggal_lahir);
+      // Fetch Zodiac Data only if birthdate is available
+      if (result.data.data.tanggal_lahir) {
+        fetchZodiacData(result.data.data.nama_lengkap, result.data.data.tanggal_lahir);
+      } else {
+        setIsCheckingZodiac(false);
+        setZodiacError("Tanggal lahir tidak tersedia dari data NIK untuk mendapatkan zodiak.");
+      }
 
       // Fetch AI Summary
       setIsSummarizing(true);
@@ -369,6 +378,27 @@ export function NikCheckClient() {
                   {renderTable({ nik: nikData.nik, ...nikData.data })}
                 </CardContent>
               </Card>
+
+              {nikData.metadata?.lat && nikData.metadata?.lon && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <CardTitle className="font-headline">Peta Lokasi</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="aspect-video w-full">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, borderRadius: 'var(--radius)' }}
+                        loading="lazy"
+                        allowFullScreen
+                        src={`https://maps.google.com/maps?q=${nikData.metadata.lat},${nikData.metadata.lon}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      ></iframe>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
