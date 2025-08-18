@@ -15,7 +15,6 @@ const GenerateImageInputSchema = z.object({
   name: z.string().describe("The person's name."),
   zodiac: z.string().describe("The person's zodiac sign."),
   shio: z.string().describe("The person's shio."),
-  summary: z.string().describe('A summary of the person based on NIK data.')
 });
 export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
 
@@ -38,7 +37,6 @@ const generateImageFlow = ai.defineFlow(
     const prompt = `Buatlah potret artistik yang futuristik dan sureal dari seseorang bernama ${input.name}. 
     Zodiaknya adalah ${input.zodiac} dan shionya adalah ${input.shio}.
     Gabungkan elemen kosmik dan fantasi yang mewakili zodiak dan shio mereka secara halus. 
-    Konteks tambahan: ${input.summary}.
     Gaya gambar harus menyerupai lukisan digital sinematik dengan pencahayaan dramatis, detail yang kaya, dan estetika profesional yang cocok untuk avatar digital.`;
     
     const {media} = await ai.generate({

@@ -30,7 +30,6 @@ import {
   TableCell,
   TableRow,
 } from "@/components/ui/table";
-import { summarizeNikData } from "@/ai/flows/summarize-nik-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const formSchema = z.object({
@@ -72,10 +71,8 @@ interface ZodiacData {
 export function NikCheckClient() {
   const [nikData, setNikData] = useState<NikData | null>(null);
   const [zodiacData, setZodiacData] = useState<ZodiacData | null>(null);
-  const [summary, setSummary] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
   const [isCheckingZodiac, setIsCheckingZodiac] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +84,7 @@ export function NikCheckClient() {
   });
   
   useEffect(() => {
-    if (zodiacData && summary && nikData) {
+    if (zodiacData && nikData) {
       const fetchImage = async () => {
         setIsGeneratingImage(true);
         try {
@@ -100,7 +97,6 @@ export function NikCheckClient() {
               name: nikData.data.nama_lengkap,
               zodiac: zodiacData.zodiac,
               shio: zodiacData.shio,
-              summary: summary,
             }),
           });
           const result = await response.json();
@@ -117,7 +113,7 @@ export function NikCheckClient() {
       };
       fetchImage();
     }
-  }, [zodiacData, summary, nikData]);
+  }, [zodiacData, nikData]);
 
 
   const fetchZodiacData = async (name: string, birthdate: string) => {
@@ -153,13 +149,11 @@ export function NikCheckClient() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsChecking(true);
-    setIsSummarizing(false);
     setIsCheckingZodiac(false);
     setIsGeneratingImage(false);
     setError(null);
     setZodiacError(null);
     setNikData(null);
-    setSummary(null);
     setZodiacData(null);
     setGeneratedImage(null);
 
@@ -179,18 +173,6 @@ export function NikCheckClient() {
         setIsCheckingZodiac(false);
         setZodiacError("Tanggal lahir tidak tersedia dari data NIK untuk mendapatkan zodiak.");
       }
-
-      setIsSummarizing(true);
-      summarizeNikData({ nikData: JSON.stringify(result.data) })
-        .then((summaryResult) => {
-          setSummary(summaryResult.summary);
-        })
-        .catch((e) => {
-          console.error("AI summarization failed:", e);
-          setSummary("Gagal membuat ringkasan AI.");
-        }).finally(() => {
-            setIsSummarizing(false);
-        });
 
     } catch (err: any) {
       setError(err.message || "Gagal mengambil data dari API!");
@@ -309,24 +291,6 @@ export function NikCheckClient() {
                             <Image src={generatedImage} alt="Generated Persona" width={512} height={512} className="w-full rounded-md" data-ai-hint="futuristic modern" />
                         ) : (
                             <p className="text-sm text-muted-foreground">Gagal membuat gambar atau sedang menunggu data lain.</p>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center gap-2">
-                        <FileText className="h-5 w-5 text-primary"/>
-                        <CardTitle className="font-headline">Ringkasan AI</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {isSummarizing ? (
-                             <div className="space-y-2">
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-4/5" />
-                            </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">{summary}</p>
                         )}
                     </CardContent>
                 </Card>
