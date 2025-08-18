@@ -18,6 +18,7 @@ const GenerateImageInputSchema = z.object({
   nameMeaning: z.string().describe("The meaning of the person's name."),
   gender: z.string().describe("The person's gender."),
   age: z.string().describe("The person's age."),
+  shio: z.string().describe("The person's Chinese zodiac (Shio)."),
 });
 export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
 
@@ -38,10 +39,11 @@ const generateImageFlow = ai.defineFlow(
   },
   async (input) => {
     const prompt = `Buatlah potret artistik yang futuristik dan sureal dari seseorang bernama ${input.name}, seorang ${input.gender} Indonesia berusia ${input.age} tahun. Pastikan orang dalam gambar memiliki ciri khas wajah orang Indonesia.
-    Zodiaknya adalah ${input.zodiac}.
+    Zodiaknya adalah ${input.zodiac}. Shio-nya adalah ${input.shio}.
     Deskripsi kepribadian berdasarkan zodiak: ${input.zodiacDescription}.
     Arti namanya adalah: ${input.nameMeaning}.
-    Gabungkan elemen kosmik, fantasi, dan simbolis yang mewakili zodiak dan arti nama mereka secara halus, serta merefleksikan jenis kelamin dan usia mereka.
+    Gabungkan elemen kosmik, fantasi, dan simbolis yang mewakili zodiak dan arti nama mereka secara halus.
+    Sertakan juga representasi artistik dari hewan Shio (${input.shio}) sebagai roh penjaga atau elemen latar yang menyatu dengan komposisi.
     Gaya gambar harus menyerupai lukisan digital sinematik dengan pencahayaan dramatis, detail yang kaya, dan estetika profesional yang cocok untuk avatar digital.`;
     
     const {media} = await ai.generate({
