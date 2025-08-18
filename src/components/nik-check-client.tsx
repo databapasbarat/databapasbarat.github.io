@@ -1,0 +1,250 @@
+"use client";
+
+import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Loader2, Fingerprint, Files, Database, FileText, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import { summarizeNikData } from "@/ai/flows/summarize-nik-data";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const formSchema = z.object({
+  nik: z
+    .string()
+    .min(16, { message: "NIK must be 16 digits." })
+    .max(16, { message: "NIK must be 16 digits." })
+    .regex(/^[0-9]+$/, { message: "NIK must contain only numbers." }),
+});
+
+interface NikData {
+  nik: string;
+  data: Record<string, any>;
+  metadata: Record<string, any>;
+  data_lhp: Record<string, any>[];
+}
+
+interface ApiResponse {
+  status: boolean;
+  data: NikData;
+  message?: string;
+}
+
+export function NikCheckClient() {
+  const [nikData, setNikData] = useState<NikData | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { nik: "" },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsChecking(true);
+    setIsSummarizing(false);
+    setError(null);
+    setNikData(null);
+    setSummary(null);
+
+    try {
+      const response = await fetch(`/api/check-nik?nik=${values.nik}`);
+      const result: ApiResponse & { error?: string } = await response.json();
+
+      if (!response.ok || result.status === false) {
+        throw new Error(result.message || result.error || "Data tidak ditemukan!");
+      }
+
+      setNikData(result.data);
+      setIsSummarizing(true);
+      
+      summarizeNikData({ nikData: JSON.stringify(result.data) })
+        .then((summaryResult) => {
+          setSummary(summaryResult.summary);
+        })
+        .catch((e) => {
+          console.error("AI summarization failed:", e);
+          setSummary("Gagal membuat ringkasan AI.");
+        }).finally(() => {
+            setIsSummarizing(false);
+        });
+
+    } catch (err: any) {
+      setError(err.message || "Gagal mengambil data dari API!");
+    } finally {
+      setIsChecking(false);
+    }
+  }
+
+  const renderTable = (data: Record<string, any>) => (
+    <Table>
+      <TableBody>
+        {Object.entries(data).map(([key, value]) => (
+          <TableRow key={key}>
+            <TableCell className="font-medium capitalize w-1/3">{key.replace(/_/g, ' ')}</TableCell>
+            <TableCell>{String(value)}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
+  return (
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">Cek Data NIK e-KTP</CardTitle>
+          <CardDescription>
+            Masukkan 16 digit Nomor Induk Kependudukan (NIK) Anda untuk melihat data.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="nik"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NIK</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Contoh: 3202285909840005"
+                        {...field}
+                        disabled={isChecking}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={isChecking} className="w-full sm:w-auto">
+                {isChecking ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Fingerprint className="mr-2 h-4 w-4" />
+                )}
+                Cek NIK
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {isChecking && (
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-1/3" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                 <CardHeader>
+                    <Skeleton className="h-6 w-1/4" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {[...Array(5)].map((_, i) => (
+                          <div className="flex" key={i}>
+                              <Skeleton className="h-5 w-1/4" />
+                              <Skeleton className="h-5 w-3/4 ml-4" />
+                          </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+      )}
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {nikData && (
+        <div className="space-y-8">
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary"/>
+                    <CardTitle className="font-headline">Ringkasan AI</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {isSummarizing ? (
+                         <div className="space-y-2">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-4/5" />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">{summary}</p>
+                    )}
+                </CardContent>
+            </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center gap-2">
+              <Files className="h-5 w-5 text-primary" />
+              <CardTitle className="font-headline">Detail KTP</CardTitle>
+            </CardHeader>
+            <CardContent className="px-0 sm:px-6">
+              {renderTable({ nik: nikData.nik, ...nikData.data })}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              <CardTitle className="font-headline">Metadata</CardTitle>
+            </CardHeader>
+            <CardContent className="px-0 sm:px-6">{renderTable(nikData.metadata)}</CardContent>
+          </Card>
+
+          {nikData.data_lhp && nikData.data_lhp.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <CardTitle className="font-headline">Data LHP</CardTitle>
+              </CardHeader>
+              <CardContent className="px-0 sm:px-6">{renderTable(nikData.data_lhp[0])}</CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
